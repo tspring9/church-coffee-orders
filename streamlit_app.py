@@ -113,15 +113,12 @@ elif choice == "View Orders":
 
             if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
                 update_status(row['id'], "in_progress")
-                st.experimental_rerun()
 
             if col2.button("Mark Ready", key=f"ready_{row['id']}"):
                 update_status(row['id'], "ready")
-                st.experimental_rerun()
 
             if col3.button("Mark Complete", key=f"complete_{row['id']}"):
                 update_status(row['id'], "complete")
-                st.experimental_rerun()
 
             st.markdown("---")
 
