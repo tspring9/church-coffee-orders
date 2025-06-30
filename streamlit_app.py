@@ -71,9 +71,9 @@ if choice == "Place Order":
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
         drink = st.selectbox("Drink", ["Latte", "Drip Coffee", "Tea", "Cappuccino"])
-        milk = st.selectbox("Milk Type", ["Whole", "Oat", "Almond", "None"])
-        flavors = st.text_input("Flavors (comma separated)", placeholder="Vanilla, Caramel")
-        pickup = st.text_input("Pickup Time (optional)", placeholder="e.g., 9:30 AM")
+        milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife Milk", "None"])
+        flavors = st.selectbox("Flavors", ["Caramel", "Mocha", "Hazelnut", "Seasonal"])
+        pickup = st.selectbox("Pickup Time", ["9:30", "9:40", "9:50", "10"])
         submit = st.form_submit_button("Submit Order")
     
     if submit:
