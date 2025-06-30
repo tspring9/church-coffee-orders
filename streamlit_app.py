@@ -181,6 +181,3 @@ elif choice == "Customer Display":
                     st.success(r)
             else:
                 st.write("No orders")
-
-
-
