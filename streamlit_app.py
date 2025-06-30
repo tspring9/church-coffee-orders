@@ -75,8 +75,8 @@ if choice == "Place Order":
     st.header("Place Your Coffee Order")
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
-        drink = st.selectbox("Drink", ["Latte", "Drip Coffee", "Tea", "Cappuccino"])
-        milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife Milk", "None"])
+        drink = st.selectbox("Drink", ["Latte", "Cold Brew", "Tea", "Standard Coffee", "De-Caf"])
+        milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife", "None"])
         flavors = st.selectbox("Flavors", ["Caramel", "Mocha", "Hazelnut", "Seasonal"])
         pickup = st.selectbox("Pickup Time", ["9:30", "9:40", "9:50", "10"])
         submit = st.form_submit_button("Submit Order")
@@ -90,6 +90,10 @@ if choice == "Place Order":
 
 elif choice == "View Orders":
     st.header("All Orders")
+
+    ADMIN_PASSCODE = "2021"  # Change this to something secure
+    passcode = st.text_input("Enter passcode to manage orders", type="password")
+
     orders = get_orders()
     if not orders:
         st.info("No orders yet.")
@@ -109,16 +113,19 @@ elif choice == "View Orders":
             st.write(f"📅 **Placed:** {formatted_time}")
             st.write(f"🔖 **Status:** {row['status']}")
 
-            col1, col2, col3 = st.columns(3)
+            if passcode == ADMIN_PASSCODE:
+                col1, col2, col3 = st.columns(3)
 
-            if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
-                update_status(row['id'], "in_progress")
+                if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
+                    update_status(row['id'], "in_progress")
 
-            if col2.button("Mark Ready", key=f"ready_{row['id']}"):
-                update_status(row['id'], "ready")
+                if col2.button("Mark Ready", key=f"ready_{row['id']}"):
+                    update_status(row['id'], "ready")
 
-            if col3.button("Mark Complete", key=f"complete_{row['id']}"):
-                update_status(row['id'], "complete")
+                if col3.button("Mark Complete", key=f"complete_{row['id']}"):
+                    update_status(row['id'], "complete")
+            else:
+                st.warning("🔒 Enter the passcode above to manage orders.")
 
             st.markdown("---")
 
