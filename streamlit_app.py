@@ -96,9 +96,6 @@ elif choice == "View Orders":
     else:
         central = pytz.timezone("America/Chicago")
 
-        # This flag tracks whether we changed any status
-        rerun_needed = False
-
         for row in orders:
             utc_dt = datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S")
             utc_dt = pytz.utc.localize(utc_dt)
@@ -113,20 +110,19 @@ elif choice == "View Orders":
             st.write(f"🔖 **Status:** {row['status']}")
 
             col1, col2, col3 = st.columns(3)
-            with col1:
-                if st.button("Mark In Progress", key=f"progress_{row['id']}"):
-                    update_status(row['id'], "in_progress")
-                    rerun_needed = True
-            with col2:
-                if st.button("Mark Ready", key=f"ready_{row['id']}"):
-                    update_status(row['id'], "ready")
-                    rerun_needed = True
-            with col3:
-                if st.button("Mark Complete", key=f"complete_{row['id']}"):
-                    update_status(row['id'], "complete")
-                    rerun_needed = True
+
+            if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
+                update_status(row['id'], "in_progress")
+                st.experimental_rerun()
+
+            if col2.button("Mark Ready", key=f"ready_{row['id']}"):
+                update_status(row['id'], "ready")
+                st.experimental_rerun()
+
+            if col3.button("Mark Complete", key=f"complete_{row['id']}"):
+                update_status(row['id'], "complete")
+                st.experimental_rerun()
+
             st.markdown("---")
 
-        # After the loop ends, trigger rerun if needed
-        if rerun_needed:
-            st.experimental_rerun()
+
