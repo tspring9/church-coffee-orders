@@ -111,7 +111,7 @@ elif choice == "View Orders":
             st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
             st.write(f"🍯 **Flavors:** {row['flavors']}")
             st.write(f"📅 **Placed:** {formatted_time}")
-            st.write(f"📅 **Pickup at:** {row['pickup']}")
+            st.write(f"📅 **Pickup at:** {row['pickup_time ']}")
             st.write(f"🔖 **Status:** {row['status']}")
 
             if passcode == ADMIN_PASSCODE:
