@@ -98,7 +98,7 @@ else:
 
 # --- Sidebar menu ---
 if menu:
-    choice = st.sidebar.selectbox("Menu", menu)
+    choice = st.sidebar.radio("Select Page:", menu)
 else:
     choice = None
 
