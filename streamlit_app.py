@@ -68,7 +68,7 @@ init_db()
 # --- Streamlit App ---
 st.title("☕️ Church Coffee Pre-Orders")
 
-menu = ["Place Order", "View Orders"]
+menu = ["Place Order", "View Orders", "Customer Display"]
 choice = st.sidebar.selectbox("Menu", menu)
 
 if choice == "Place Order":
@@ -121,5 +121,66 @@ elif choice == "View Orders":
                 update_status(row['id'], "complete")
 
             st.markdown("---")
+
+elif choice == "Customer Display":
+    st.header("📢 Customer Order Display")
+
+    orders = get_orders()
+    if not orders:
+        st.info("No orders yet.")
+    else:
+        # Prepare lists by status
+        ordered = []
+        preparing = []
+        ready = []
+
+        central = pytz.timezone("America/Chicago")
+
+        for row in orders:
+            if row['status'] in ("complete", "cancelled"):
+                continue  # Skip these
+
+            # Convert timestamp
+            utc_dt = datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S")
+            utc_dt = pytz.utc.localize(utc_dt)
+            central_dt = utc_dt.astimezone(central)
+            formatted_time = central_dt.strftime("%I:%M %p")
+
+            card = f"**{row['customer_name']}**\n\n☕ {row['drink_type']}\n🕒 {formatted_time}"
+
+            if row['status'] == "pending":
+                ordered.append(card)
+            elif row['status'] == "in_progress":
+                preparing.append(card)
+            elif row['status'] == "ready":
+                ready.append(card)
+
+        # Display 3 columns
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.subheader("📝 Ordered")
+            if ordered:
+                for o in ordered:
+                    st.info(o)
+            else:
+                st.write("No orders")
+
+        with col2:
+            st.subheader("👨‍🍳 Being Prepared")
+            if preparing:
+                for p in preparing:
+                    st.warning(p)
+            else:
+                st.write("No orders")
+
+        with col3:
+            st.subheader("✅ Ready")
+            if ready:
+                for r in ready:
+                    st.success(r)
+            else:
+                st.write("No orders")
+
 
 
