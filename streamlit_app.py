@@ -1,8 +1,13 @@
 import streamlit as st
 import sqlite3
 from datetime import datetime
+import pytz
 
 DATABASE = 'database.db'
+
+
+
+
 
 # --- Helper Function: Connect to DB ---
 def get_db_connection():
@@ -89,13 +94,21 @@ elif choice == "View Orders":
     if not orders:
         st.info("No orders yet.")
     else:
+        # Define timezone once
+        central = pytz.timezone("America/Chicago")
+
         for row in orders:
+            # Convert UTC timestamp to Central Time
+            utc_dt = datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S")
+            utc_dt = pytz.utc.localize(utc_dt)
+            central_dt = utc_dt.astimezone(central)
+            formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
+
             st.write(f"**Order ID:** {row['id']}")
             st.write(f"👤 **Name:** {row['customer_name']}")
             st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
             st.write(f"🍯 **Flavors:** {row['flavors']}")
-            st.write(f"🕒 **Pickup Time:** {row['pickup_time']}")
-            st.write(f"📅 **Placed:** {row['timestamp']}")
+            st.write(f"📅 **Placed:** {formatted_time}")
             st.write(f"🔖 **Status:** {row['status']}")
 
             col1, col2, col3 = st.columns(3)
