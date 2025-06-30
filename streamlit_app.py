@@ -94,11 +94,12 @@ elif choice == "View Orders":
     if not orders:
         st.info("No orders yet.")
     else:
-        # Define timezone once
         central = pytz.timezone("America/Chicago")
 
+        # This flag tracks whether we changed any status
+        rerun_needed = False
+
         for row in orders:
-            # Convert UTC timestamp to Central Time
             utc_dt = datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S")
             utc_dt = pytz.utc.localize(utc_dt)
             central_dt = utc_dt.astimezone(central)
@@ -115,13 +116,17 @@ elif choice == "View Orders":
             with col1:
                 if st.button("Mark In Progress", key=f"progress_{row['id']}"):
                     update_status(row['id'], "in_progress")
-                    st.experimental_rerun()
+                    rerun_needed = True
             with col2:
                 if st.button("Mark Ready", key=f"ready_{row['id']}"):
                     update_status(row['id'], "ready")
-                    st.experimental_rerun()
+                    rerun_needed = True
             with col3:
                 if st.button("Mark Complete", key=f"complete_{row['id']}"):
                     update_status(row['id'], "complete")
-                    st.experimental_rerun()
+                    rerun_needed = True
             st.markdown("---")
+
+        # After the loop ends, trigger rerun if needed
+        if rerun_needed:
+            st.experimental_rerun()
