@@ -68,8 +68,39 @@ init_db()
 # --- Streamlit App ---
 st.title("☕️ Church Coffee Pre-Orders")
 
-menu = ["Place Order", "View Orders", "Customer Display"]
-choice = st.sidebar.selectbox("Menu", menu)
+# --- Role selection at the top ---
+st.write("## 🔑 Select Mode")
+role = st.radio(
+    "Choose your portal:",
+    ["Customer View", "Volunteer View"],
+    index=0  # Default to Customer View
+)
+
+# --- If Volunteer View, require passcode ---
+volunteer_authenticated = False
+
+if role == "Volunteer View":
+    ADMIN_PASSCODE = "2021"
+    passcode = st.text_input("Enter passcode to access volunteer tools", type="password")
+    if passcode == ADMIN_PASSCODE:
+        volunteer_authenticated = True
+    else:
+        st.warning("🔒 Enter the passcode above to access Volunteer View.")
+
+# --- Build the menu dynamically ---
+if role == "Customer View":
+    menu = ["Place Order", "Customer Display"]
+elif volunteer_authenticated:
+    menu = ["View Orders", "Customer Display"]
+else:
+    # If passcode not entered, hide everything else
+    menu = []
+
+# --- Sidebar menu ---
+if menu:
+    choice = st.sidebar.selectbox("Menu", menu)
+else:
+    choice = None
 
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
@@ -91,9 +122,6 @@ if choice == "Place Order":
 elif choice == "View Orders":
     st.header("All Orders")
 
-    ADMIN_PASSCODE = "2021"  # Change this to something secure
-    passcode = st.text_input("Enter passcode to manage orders", type="password")
-
     orders = get_orders()
     if not orders:
         st.info("No orders yet.")
@@ -114,7 +142,7 @@ elif choice == "View Orders":
             st.write(f"📅 **Pickup at:** {row['pickup_time']}")
             st.write(f"🔖 **Status:** {row['status']}")
 
-            if passcode == ADMIN_PASSCODE:
+            if volunteer_authenticated:
                 col1, col2, col3 = st.columns(3)
 
                 if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
@@ -126,7 +154,7 @@ elif choice == "View Orders":
                 if col3.button("Mark Complete", key=f"complete_{row['id']}"):
                     update_status(row['id'], "complete")
             else:
-                st.warning("🔒 Enter the passcode above to manage orders.")
+                st.warning("🔒 You do not have access to manage orders.")
 
             st.markdown("---")
 
