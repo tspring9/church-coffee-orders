@@ -89,9 +89,9 @@ if role == "Volunteer View":
 
 # --- Build the menu dynamically ---
 if role == "Customer View":
-    menu = ["Place Order", "Customer Display"]
+    menu = ["Place Order", "Order Display"]
 elif volunteer_authenticated:
-    menu = ["View Orders", "Customer Display"]
+    menu = ["Manage Orders", "Order Display"]
 else:
     # If passcode not entered, hide everything else
     menu = []
@@ -119,7 +119,7 @@ if choice == "Place Order":
             submit_order(name, drink, milk, flavors, pickup)
             st.success("✅ Your order has been placed!")
 
-elif choice == "View Orders":
+elif choice == "Manage Orders":
     st.header("All Orders")
 
     orders = get_orders()
@@ -158,7 +158,7 @@ elif choice == "View Orders":
 
             st.markdown("---")
 
-elif choice == "Customer Display":
+elif choice == "Order Display":
     st.header("📢 Customer Order Display")
 
     orders = get_orders()
