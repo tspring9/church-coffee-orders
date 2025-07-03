@@ -66,7 +66,17 @@ def update_status(order_id, new_status):
 init_db()
 
 # --- Streamlit App ---
+st.markdown(
+    """
+    <div style="text-align: center;">
+        <img src="CCO.png" width="200">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("☕️ Church Coffee Pre-Orders")
+
 
 # --- Role selection at the top ---
 st.write("## 🔑 Select Mode")
@@ -96,6 +106,8 @@ else:
     # If passcode not entered, hide everything else
     menu = []
 
+# --- Sidebar logo ---
+st.sidebar.image("CCO.png", use_column_width=True)
 # --- Sidebar menu ---
 if menu:
     choice = st.sidebar.radio("Select Page:", menu)
