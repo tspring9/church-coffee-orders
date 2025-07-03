@@ -90,6 +90,7 @@ if mode == "volunteer":
         if passcode == "2021":
             st.session_state.volunteer_authenticated = True
             st.sidebar.success("Volunteer mode enabled!")
+            st.experimental_rerun()
     # If authenticated, show volunteer menu
     if st.session_state.volunteer_authenticated:
         menu = ["View Orders", "Customer Display"]
