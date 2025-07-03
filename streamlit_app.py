@@ -71,22 +71,7 @@ st.title("☕️ Collective Church Coffee Pre-Orders")
 # --- If Volunteer View, require passcode ---
 volunteer_authenticated = False
 
-if role == "Volunteer View":
-    ADMIN_PASSCODE = "2021"
-    passcode = st.text_input("Enter passcode to access volunteer tools", type="password")
-    if passcode == ADMIN_PASSCODE:
-        volunteer_authenticated = True
-    else:
-        st.warning("🔒 Enter the passcode above to access Volunteer View.")
 
-# --- Build the menu dynamically ---
-if role == "Customer View":
-    menu = ["Place Order", "Order Display"]
-elif volunteer_authenticated:
-    menu = ["Manage Orders", "Order Display"]
-else:
-    # If passcode not entered, hide everything else
-    menu = []
 
 # Read URL parameters
 query_params = st.experimental_get_query_params()
