@@ -68,14 +68,6 @@ init_db()
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
 
-# --- Role selection at the top ---
-st.write("## 🔑 Select Mode")
-role = st.radio(
-    "Choose your portal:",
-    ["Customer View", "Volunteer View"],
-    index=0  # Default to Customer View
-)
-
 # --- If Volunteer View, require passcode ---
 volunteer_authenticated = False
 
@@ -95,6 +87,32 @@ elif volunteer_authenticated:
 else:
     # If passcode not entered, hide everything else
     menu = []
+
+# Read URL parameters
+query_params = st.experimental_get_query_params()
+mode = query_params.get("mode", ["customer"])[0]
+
+# Initialize volunteer auth state
+if "volunteer_authenticated" not in st.session_state:
+    st.session_state.volunteer_authenticated = False
+
+# Determine which view
+if mode == "volunteer":
+    # Prompt for passcode if not authenticated
+    if not st.session_state.volunteer_authenticated:
+        st.sidebar.write("🔒 **Volunteer Login**")
+        passcode = st.sidebar.text_input("Enter passcode:", type="password")
+        if passcode == "2021":
+            st.session_state.volunteer_authenticated = True
+            st.sidebar.success("Volunteer mode enabled!")
+    # If authenticated, show volunteer menu
+    if st.session_state.volunteer_authenticated:
+        menu = ["View Orders", "Customer Display"]
+    else:
+        menu = []
+else:
+    # Default: Customer menu
+    menu = ["Place Order", "Customer Display"]
 
 # --- Sidebar logo ---
 st.sidebar.image("CCO.png", use_column_width=True)
