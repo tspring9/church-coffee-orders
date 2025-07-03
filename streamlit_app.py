@@ -66,17 +66,7 @@ def update_status(order_id, new_status):
 init_db()
 
 # --- Streamlit App ---
-st.markdown(
-    """
-    <div style="text-align: center;">
-        <img src="CCO.png" width="200">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.title("☕️ Church Coffee Pre-Orders")
-
+st.title("☕️ Collective Church Coffee Pre-Orders")
 
 # --- Role selection at the top ---
 st.write("## 🔑 Select Mode")
