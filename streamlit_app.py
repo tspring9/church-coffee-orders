@@ -74,7 +74,7 @@ volunteer_authenticated = False
 
 
 # Read URL parameters
-query_params = st.query_params()
+query_params = st.experimental_get_query_params()
 mode = query_params.get("mode", ["customer"])[0]
 
 # Initialize volunteer auth state
