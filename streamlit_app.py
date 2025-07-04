@@ -34,7 +34,8 @@ def init_db():
     conn.commit()
     conn.close()
     
-menu = ["Place Order", "Customer Display", "Order Management"]
+menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
+
 
 
 # --- Submit a new order ---
@@ -224,3 +225,15 @@ elif choice == "Customer Display":
                     st.success(r)
             else:
                 st.write("No orders")
+                
+elif choice == "New Here?":
+    st.header("👋 Welcome to Collective Church!")
+    st.write(
+        "We're so glad you're here. Check out the resources below to learn more about our community:"
+    )
+
+    st.link_button("🙌 I'm New at Collective", "https://www.collectiveomaha.com/im-new")
+    st.link_button("🎥 Watch Services Online", "https://www.collectiveomaha.com/watch")
+
+    st.success("Feel free to grab a coffee and make yourself at home! ☕️")
+
