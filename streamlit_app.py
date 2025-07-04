@@ -69,7 +69,7 @@ init_db()
 st.title("☕️ Collective Church Coffee Pre-Orders")
 
 # --- If Volunteer View, require passcode ---
-volunteer_authenticated = False
+#volunteer_authenticated = False
 
 
 
