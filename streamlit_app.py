@@ -33,6 +33,9 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
+    
+menu = ["Place Order", "Customer Display", "Order Management"]
+
 
 # --- Submit a new order ---
 def submit_order(name, drink, milk, flavors, pickup):
@@ -68,44 +71,10 @@ init_db()
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
 
-# --- If Volunteer View, require passcode ---
-#volunteer_authenticated = False
-
-
-
-# Read URL parameters
-query_params = st.experimental_get_query_params()
-mode = query_params.get("mode", ["customer"])[0]
-
-# Initialize volunteer auth state
-if "volunteer_authenticated" not in st.session_state:
-    st.session_state.volunteer_authenticated = False
-
-# Determine which view
-if mode == "volunteer":
-    # Prompt for passcode if not authenticated
-    if not st.session_state.volunteer_authenticated:
-        st.sidebar.write("🔒 **Volunteer Login**")
-        passcode = st.sidebar.text_input("Enter passcode:", type="password")
-        if passcode == "2021":
-            st.session_state.volunteer_authenticated = True
-            st.rerun()
-    # If authenticated, show volunteer menu
-    if st.session_state.volunteer_authenticated:
-        menu = ["View Orders", "Customer Display"]
-    else:
-        menu = []
-else:
-    # Default: Customer menu
-    menu = ["Place Order", "Customer Display"]
-
 # --- Sidebar logo ---
-st.sidebar.image("CCO.png", use_column_width=True)
+st.sidebar.image("CCO.png", use_container_width=True)
 # --- Sidebar menu ---
-if menu:
-    choice = st.sidebar.radio("Select Page:", menu)
-else:
-    choice = None
+choice = st.sidebar.radio("Select Page:", menu)
 
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
@@ -124,44 +93,51 @@ if choice == "Place Order":
             submit_order(name, drink, milk, flavors, pickup)
             st.success("✅ Your order has been placed!")
 
-elif choice == "Manage Orders":
-    st.header("All Orders")
+elif choice == "Order Management":
+    st.header("🔒 Order Management")
 
-    orders = get_orders()
-    if not orders:
-        st.info("No orders yet.")
+    if "volunteer_authenticated" not in st.session_state:
+        st.session_state.volunteer_authenticated = False
+
+    if not st.session_state.volunteer_authenticated:
+        passcode = st.text_input("Enter passcode to manage orders", type="password")
+        if passcode == "2021":
+            st.session_state.volunteer_authenticated = True
+            st.rerun()
+        else:
+            st.warning("Please enter the correct passcode to access management tools.")
     else:
-        central = pytz.timezone("America/Chicago")
+        orders = get_orders()
+        if not orders:
+            st.info("No orders yet.")
+        else:
+            central = pytz.timezone("America/Chicago")
+            for row in orders:
+                utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+                utc_dt = pytz.utc.localize(utc_dt)
+                central_dt = utc_dt.astimezone(central)
+                formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
 
-        for row in orders:
-            utc_dt = datetime.strptime(row['timestamp'], "%Y-%m-%d %H:%M:%S")
-            utc_dt = pytz.utc.localize(utc_dt)
-            central_dt = utc_dt.astimezone(central)
-            formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
+                st.write(f"**Order ID:** {row['id']}")
+                st.write(f"👤 **Name:** {row['customer_name']}")
+                st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
+                st.write(f"🍯 **Flavors:** {row['flavors']}")
+                st.write(f"📅 **Placed:** {formatted_time}")
+                st.write(f"📅 **Pickup at:** {row['pickup_time']}")
+                st.write(f"🔖 **Status:** {row['status']}")
 
-            st.write(f"**Order ID:** {row['id']}")
-            st.write(f"👤 **Name:** {row['customer_name']}")
-            st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
-            st.write(f"🍯 **Flavors:** {row['flavors']}")
-            st.write(f"📅 **Placed:** {formatted_time}")
-            st.write(f"📅 **Pickup at:** {row['pickup_time']}")
-            st.write(f"🔖 **Status:** {row['status']}")
-
-            if volunteer_authenticated:
                 col1, col2, col3 = st.columns(3)
-
                 if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
                     update_status(row['id'], "in_progress")
-
+                    st.rerun()
                 if col2.button("Mark Ready", key=f"ready_{row['id']}"):
                     update_status(row['id'], "ready")
-
+                    st.rerun()
                 if col3.button("Mark Complete", key=f"complete_{row['id']}"):
                     update_status(row['id'], "complete")
-            else:
-                st.warning("🔒 You do not have access to manage orders.")
+                    st.rerun()
+                st.markdown("---")
 
-            st.markdown("---")
 
 elif choice == "Order Display":
     st.header("📢 Customer Order Display")
