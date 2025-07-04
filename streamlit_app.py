@@ -94,61 +94,48 @@ if choice == "Place Order":
             submit_order(name, drink, milk, flavors, pickup)
             st.success("✅ Your order has been placed!")
 
-elif choice == "Order Management":
-    st.header("🔒 Order Management")
+elif choice == "🔒 Order Management":
+    st.header("Order Management")
 
-    if "volunteer_authenticated" not in st.session_state:
-        st.session_state.volunteer_authenticated = False
+    # Sub-tabs for Manage Orders, Reports, Inventory
+    subtab = st.radio(
+        "Select View:",
+        ["Manage Orders", "Reports", "Inventory"],
+        horizontal=True
+    )
 
-    if not st.session_state.volunteer_authenticated:
-        passcode = st.text_input("Enter passcode to manage orders", type="password")
-        if passcode == "2021":
-            st.session_state.volunteer_authenticated = True
-            st.rerun()
+    # ---- Manage Orders sub-tab ----
+    if subtab == "Manage Orders":
+        if "volunteer_authenticated" not in st.session_state:
+            st.session_state.volunteer_authenticated = False
+
+        if not st.session_state.volunteer_authenticated:
+            passcode = st.text_input("Enter passcode to manage orders", type="password")
+            if passcode == "2021":
+                st.session_state.volunteer_authenticated = True
+                st.rerun()
+            else:
+                st.warning("Please enter the correct passcode to access management tools.")
         else:
-            st.warning("Please enter the correct passcode to access management tools.")
-    else:
-        # Add filter options
-        filter_option = st.radio(
-            "Filter orders:",
-            ["Active Orders", "Completed Orders"],
-            index=0,
-            horizontal=True
-        )
+            orders = get_orders()
+            if not orders:
+                st.info("No orders yet.")
+            else:
+                central = pytz.timezone("America/Chicago")
+                for row in orders:
+                    utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+                    utc_dt = pytz.utc.localize(utc_dt)
+                    central_dt = utc_dt.astimezone(central)
+                    formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
 
-        orders = get_orders()
-        if not orders:
-            st.info("No orders yet.")
-        else:
-            central = pytz.timezone("America/Chicago")
-            any_displayed = False
+                    st.write(f"**Order ID:** {row['id']}")
+                    st.write(f"👤 **Name:** {row['customer_name']}")
+                    st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
+                    st.write(f"🍯 **Flavors:** {row['flavors']}")
+                    st.write(f"📅 **Placed:** {formatted_time}")
+                    st.write(f"📅 **Pickup at:** {row['pickup_time']}")
+                    st.write(f"🔖 **Status:** {row['status']}")
 
-            for row in orders:
-                is_completed = row["status"] in ("complete", "cancelled")
-                
-                # Filter logic
-                if filter_option == "Active Orders" and is_completed:
-                    continue
-                if filter_option == "Completed Orders" and not is_completed:
-                    continue
-
-                any_displayed = True
-
-                utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
-                utc_dt = pytz.utc.localize(utc_dt)
-                central_dt = utc_dt.astimezone(central)
-                formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
-
-                st.write(f"**Order ID:** {row['id']}")
-                st.write(f"👤 **Name:** {row['customer_name']}")
-                st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
-                st.write(f"🍯 **Flavors:** {row['flavors']}")
-                st.write(f"📅 **Placed:** {formatted_time}")
-                st.write(f"📅 **Pickup at:** {row['pickup_time']}")
-                st.write(f"🔖 **Status:** {row['status']}")
-
-                # Only show buttons if it's not completed
-                if not is_completed:
                     col1, col2, col3 = st.columns(3)
                     if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
                         update_status(row['id'], "in_progress")
@@ -159,12 +146,66 @@ elif choice == "Order Management":
                     if col3.button("Mark Complete", key=f"complete_{row['id']}"):
                         update_status(row['id'], "complete")
                         st.rerun()
-                st.markdown("---")
-            
-            if not any_displayed:
-                st.info("No orders match this filter.")
+                    st.markdown("---")
 
+    # ---- Reports sub-tab ----
+    elif subtab == "Reports":
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access reports.")
+        else:
+            st.subheader("📊 Full Order Export")
+            orders = get_orders()
+            if not orders:
+                st.info("No orders yet.")
+            else:
+                import pandas as pd
+                df = pd.DataFrame(orders)
 
+                st.dataframe(df)
+
+                csv = df.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download All Orders as CSV",
+                    csv,
+                    "all_orders.csv",
+                    "text/csv",
+                    key="download-csv"
+                )
+
+    # ---- Inventory sub-tab ----
+    elif subtab == "Inventory":
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access inventory.")
+        else:
+            st.subheader("📦 Inventory Summary")
+
+            orders = get_orders()
+            if not orders:
+                st.info("No orders yet.")
+            else:
+                import collections
+
+                drinks = collections.Counter()
+                milks = collections.Counter()
+                flavors = collections.Counter()
+
+                for row in orders:
+                    if row["status"] in ("complete", "ready", "in_progress", "pending"):
+                        drinks[row["drink_type"]] += 1
+                        milks[row["milk_type"]] += 1
+                        flavors[row["flavors"]] += 1
+
+                st.write("### ☕ Drinks")
+                for k, v in drinks.items():
+                    st.write(f"- {k}: {v}")
+
+                st.write("### 🥛 Milk Types")
+                for k, v in milks.items():
+                    st.write(f"- {k}: {v}")
+
+                st.write("### 🍯 Flavors")
+                for k, v in flavors.items():
+                    st.write(f"- {k}: {v}")
 
 elif choice == "Customer Display":
     st.header("📢 Customer Order Display")
