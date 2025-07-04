@@ -150,7 +150,7 @@ elif choice == "🔒 Order Management":
 
     # ---- Reports sub-tab ----
     elif subtab == "Reports":
-    st.subheader("📊 Full Order Export")
+        st.subheader("📊 Full Order Export")
     if not orders:
         st.info("No orders yet.")
     else:
