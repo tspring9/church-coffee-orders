@@ -139,7 +139,7 @@ elif choice == "Order Management":
                 st.markdown("---")
 
 
-elif choice == "Order Display":
+elif choice == "Customer Display":
     st.header("📢 Customer Order Display")
 
     orders = get_orders()
