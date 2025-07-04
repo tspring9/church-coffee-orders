@@ -150,27 +150,24 @@ elif choice == "🔒 Order Management":
 
     # ---- Reports sub-tab ----
     elif subtab == "Reports":
-        if not st.session_state.volunteer_authenticated:
-            st.warning("Please enter the passcode in 'Manage Orders' to access reports.")
-        else:
-            st.subheader("📊 Full Order Export")
-            orders = get_orders()
-            if not orders:
-                st.info("No orders yet.")
-            else:
-                import pandas as pd
-                df = pd.DataFrame(orders)
+    st.subheader("📊 Full Order Export")
+    if not orders:
+        st.info("No orders yet.")
+    else:
+        import pandas as pd
+        df = pd.DataFrame([dict(row) for row in orders])
 
-                st.dataframe(df)
+        st.dataframe(df)
 
-                csv = df.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download All Orders as CSV",
-                    csv,
-                    "all_orders.csv",
-                    "text/csv",
-                    key="download-csv"
-                )
+        csv = df.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Download All Orders as CSV",
+            csv,
+            "all_orders.csv",
+            "text/csv",
+            key="download-csv"
+        )
+
 
     # ---- Inventory sub-tab ----
     elif subtab == "Inventory":
