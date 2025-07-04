@@ -105,7 +105,7 @@ elif choice == "🔒 Order Management":
     )
 
     # ---- Manage Orders sub-tab ----
-    if subtab == "Manage Orders":
+ if subtab == "Manage Orders":
     if "volunteer_authenticated" not in st.session_state:
         st.session_state.volunteer_authenticated = False
 
@@ -147,6 +147,7 @@ elif choice == "🔒 Order Management":
                     update_status(row['id'], "complete")
                     st.rerun()
                 st.markdown("---")
+
 
 
     # ---- Reports sub-tab ----
