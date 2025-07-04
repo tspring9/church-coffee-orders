@@ -106,24 +106,48 @@ elif choice == "🔒 Order Management":
 
     # ---- Manage Orders sub-tab ----
     if subtab == "Manage Orders":
-        if "volunteer_authenticated" not in st.session_state:
-            st.session_state.volunteer_authenticated = False
+    if "volunteer_authenticated" not in st.session_state:
+        st.session_state.volunteer_authenticated = False
 
-        if not st.session_state.volunteer_authenticated:
-            passcode = st.text_input("Enter passcode to manage orders", type="password")
-            if passcode == "2021":
-                st.session_state.volunteer_authenticated = True
-                st.rerun()
-            else:
-                st.warning("Please enter the correct passcode to access management tools.")
+    if not st.session_state.volunteer_authenticated:
+        passcode = st.text_input("Enter passcode to manage orders", type="password")
+        if passcode == "2021":
+            st.session_state.volunteer_authenticated = True
+            st.rerun()
         else:
-            orders = get_orders()
-            if not orders:
-                st.info("No orders yet.")
-            else:
-                # (your order management logic)
-                # ... [same as before]
-                pass  # Replace with your existing logic here
+            st.warning("Please enter the correct passcode to access management tools.")
+    else:
+        orders = get_orders()
+        if not orders:
+            st.info("No orders yet.")
+        else:
+            central = pytz.timezone("America/Chicago")
+            for row in orders:
+                utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+                utc_dt = pytz.utc.localize(utc_dt)
+                central_dt = utc_dt.astimezone(central)
+                formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
+
+                st.write(f"**Order ID:** {row['id']}")
+                st.write(f"👤 **Name:** {row['customer_name']}")
+                st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
+                st.write(f"🍯 **Flavors:** {row['flavors']}")
+                st.write(f"📅 **Placed:** {formatted_time}")
+                st.write(f"📅 **Pickup at:** {row['pickup_time']}")
+                st.write(f"🔖 **Status:** {row['status']}")
+
+                col1, col2, col3 = st.columns(3)
+                if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
+                    update_status(row['id'], "in_progress")
+                    st.rerun()
+                if col2.button("Mark Ready", key=f"ready_{row['id']}"):
+                    update_status(row['id'], "ready")
+                    st.rerun()
+                if col3.button("Mark Complete", key=f"complete_{row['id']}"):
+                    update_status(row['id'], "complete")
+                    st.rerun()
+                st.markdown("---")
+
 
     # ---- Reports sub-tab ----
     elif subtab == "Reports":
