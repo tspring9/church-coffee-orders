@@ -107,12 +107,32 @@ elif choice == "Order Management":
         else:
             st.warning("Please enter the correct passcode to access management tools.")
     else:
+        # Add filter options
+        filter_option = st.radio(
+            "Filter orders:",
+            ["Active Orders", "Completed Orders"],
+            index=0,
+            horizontal=True
+        )
+
         orders = get_orders()
         if not orders:
             st.info("No orders yet.")
         else:
             central = pytz.timezone("America/Chicago")
+            any_displayed = False
+
             for row in orders:
+                is_completed = row["status"] in ("complete", "cancelled")
+                
+                # Filter logic
+                if filter_option == "Active Orders" and is_completed:
+                    continue
+                if filter_option == "Completed Orders" and not is_completed:
+                    continue
+
+                any_displayed = True
+
                 utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
                 utc_dt = pytz.utc.localize(utc_dt)
                 central_dt = utc_dt.astimezone(central)
@@ -126,17 +146,23 @@ elif choice == "Order Management":
                 st.write(f"📅 **Pickup at:** {row['pickup_time']}")
                 st.write(f"🔖 **Status:** {row['status']}")
 
-                col1, col2, col3 = st.columns(3)
-                if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
-                    update_status(row['id'], "in_progress")
-                    st.rerun()
-                if col2.button("Mark Ready", key=f"ready_{row['id']}"):
-                    update_status(row['id'], "ready")
-                    st.rerun()
-                if col3.button("Mark Complete", key=f"complete_{row['id']}"):
-                    update_status(row['id'], "complete")
-                    st.rerun()
+                # Only show buttons if it's not completed
+                if not is_completed:
+                    col1, col2, col3 = st.columns(3)
+                    if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
+                        update_status(row['id'], "in_progress")
+                        st.rerun()
+                    if col2.button("Mark Ready", key=f"ready_{row['id']}"):
+                        update_status(row['id'], "ready")
+                        st.rerun()
+                    if col3.button("Mark Complete", key=f"complete_{row['id']}"):
+                        update_status(row['id'], "complete")
+                        st.rerun()
                 st.markdown("---")
+            
+            if not any_displayed:
+                st.info("No orders match this filter.")
+
 
 
 elif choice == "Customer Display":
