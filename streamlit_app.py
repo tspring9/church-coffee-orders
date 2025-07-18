@@ -84,7 +84,7 @@ if choice == "Place Order":
         drink = st.selectbox("Drink", ["Latte", "Cold Brew", "Tea", "Standard Coffee", "De-Caf"])
         milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife", "None"])
         flavors = st.selectbox("Flavors", ["Caramel", "Mocha", "Hazelnut", "Seasonal", "None"])
-        pickup = st.selectbox("Pickup Time", ["9:30", "9:40", "9:50", "10"])
+        pickup = st.selectbox("Pickup Time", ["ASAP", "8:00","8:10", "8:20","8:30", "8:40", "8:50","9:00","9:10", "9:20","9:30", "9:40", "9:50", "10"])
         submit = st.form_submit_button("Submit Order")
     
     if submit:
