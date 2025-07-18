@@ -83,18 +83,15 @@ if choice == "Place Order":
     from datetime import datetime
     import pytz
 
+    # Get current CST time
     central = pytz.timezone("America/Chicago")
+    ###now = datetime.now(central)
 
-    # Show current actual time (optional)
-    actual_now = datetime.now(central)
-    st.info(f"🕒 Real current time (CST): {actual_now.strftime('%I:%M %p')}")
+    # Optional: for testing only
+    # now = central.localize(datetime(now.year, now.month, now.day, 8, 1))  # Simulated 8:01 AM
 
-    # Let user input a custom time for testing
-    test_time = st.time_input("🧪 Test as if it's this time (CST)", value=actual_now.time())
-
-    # Combine today’s date with the selected time
-    today = actual_now.date()
-    now = central.localize(datetime.combine(today, test_time))
+    # Show current time
+    st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
 
     # Define all slots
     time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10:00"]
