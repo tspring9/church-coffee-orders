@@ -85,7 +85,7 @@ if choice == "Place Order":
 
     # Get current CST time
     central = pytz.timezone("America/Chicago")
-    ###now = datetime.now(central)
+    now = datetime.now(central)
 
     # Optional: for testing only
     # now = central.localize(datetime(now.year, now.month, now.day, 8, 1))  # Simulated 8:01 AM
