@@ -94,19 +94,23 @@ if choice == "Place Order":
     st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
 
     # Define all slots
-    time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10"]
+    time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10:00"]
 
     # Filter out past slots
     filtered_slots = []
     for t in time_slots:
         if t == "ASAP":
             filtered_slots.append(t)
-            continue
-        slot_dt = datetime.strptime(t, "%H:%M").replace(
-            year=now.year, month=now.month, day=now.day, tzinfo=central
-        )
-        if slot_dt >= now:
-            filtered_slots.append(t)
+        else:
+            try:
+                slot_dt = datetime.strptime(t, "%H:%M").replace(
+                    year=now.year, month=now.month, day=now.day, tzinfo=central
+                )
+                if slot_dt >= now:
+                    filtered_slots.append(t)
+            except ValueError:
+                st.warning(f"⚠️ Invalid time format: {t}")
+
 
     # Order Form
     with st.form(key="order_form"):
