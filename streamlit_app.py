@@ -79,14 +79,44 @@ choice = st.sidebar.radio("Select Page:", menu)
 
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
+
+    from datetime import datetime
+    import pytz
+
+    # Get current CST time
+    central = pytz.timezone("America/Chicago")
+    now = datetime.now(central)
+
+    # Optional: for testing only
+    # now = central.localize(datetime(now.year, now.month, now.day, 8, 1))  # Simulated 8:01 AM
+
+    # Show current time
+    st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
+
+    # Define all slots
+    time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10"]
+
+    # Filter out past slots
+    filtered_slots = []
+    for t in time_slots:
+        if t == "ASAP":
+            filtered_slots.append(t)
+            continue
+        slot_dt = datetime.strptime(t, "%H:%M").replace(
+            year=now.year, month=now.month, day=now.day, tzinfo=central
+        )
+        if slot_dt >= now:
+            filtered_slots.append(t)
+
+    # Order Form
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
         drink = st.selectbox("Drink", ["Latte", "Cold Brew", "Tea", "Standard Coffee", "De-Caf"])
         milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife", "None"])
         flavors = st.selectbox("Flavors", ["Caramel", "Mocha", "Hazelnut", "Seasonal", "None"])
-        pickup = st.selectbox("Pickup Time", ["ASAP", "8:00","8:10", "8:20","8:30", "8:40", "8:50","9:00","9:10", "9:20","9:30", "9:40", "9:50", "10"])
+        pickup = st.selectbox("Pickup Time", filtered_slots)
         submit = st.form_submit_button("Submit Order")
-    
+
     if submit:
         if not name or not drink:
             st.error("Please provide your name and drink.")
