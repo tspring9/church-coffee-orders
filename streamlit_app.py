@@ -101,6 +101,20 @@ def update_status(order_id, new_status):
     cursor.execute('UPDATE orders SET status = ? WHERE id = ?', (new_status, order_id))
     conn.commit()
     conn.close()
+    
+def get_active_menu_items(category):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('SELECT label FROM menu_options WHERE category = ? AND active = 1', (category,))
+    rows = cursor.fetchall()
+    conn.close()
+    return [row["label"] for row in rows]
+
+# In your order form:
+drink = st.selectbox("Drink", get_active_menu_items("drink"))
+milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
+flavors = st.selectbox("Flavors", get_active_menu_items("flavor"))
+
 
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
@@ -167,7 +181,7 @@ elif choice == "🔒 Order Management":
     # Sub-tabs for Manage Orders, Reports, Inventory
     subtab = st.radio(
         "Select View:",
-        ["Manage Orders", "Reports", "Inventory"],
+        ["Manage Orders", "Reports", "Inventory", "Menu Settings"],
         horizontal=True
     )
 
@@ -276,6 +290,34 @@ elif choice == "🔒 Order Management":
                 st.write("### 🍯 Flavors")
                 for k, v in flavors.items():
                     st.write(f"- {k}: {v}")
+    elif subtab == "Menu Settings":
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
+        else:
+            st.subheader("🧾 Menu Editor")
+
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM menu_options ORDER BY category, label")
+            rows = cursor.fetchall()
+            conn.close()
+
+            for row in rows:
+                col1, col2, col3 = st.columns([2, 2, 1])
+                with col1:
+                    st.write(f"**{row['label']}**")
+                with col2:
+                    st.write(f"Category: {row['category']}")
+                with col3:
+                    new_status = st.checkbox("Available", value=bool(row['active']), key=f"menu_{row['id']}")
+                    if new_status != bool(row['active']):
+                        conn = get_db_connection()
+                        cur = conn.cursor()
+                        cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row['id']))
+                        conn.commit()
+                        conn.close()
+                        st.experimental_rerun()
+
 
 
 elif choice == "Customer Display":
