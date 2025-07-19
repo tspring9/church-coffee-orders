@@ -16,7 +16,7 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
-# --- Initialize DB Schema ---
+# --- Initialize DB Schema for Orders ---
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -34,10 +34,45 @@ def init_db():
     ''')
     conn.commit()
     conn.close()
-    
+
+# --- Initialize Menu Options (drinks, milks, flavors) ---
+def init_menu_options():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS menu_options (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,     -- 'drink', 'milk', or 'flavor'
+            label TEXT NOT NULL,
+            active INTEGER DEFAULT 1    -- 1 = active, 0 = hidden
+        )
+    ''')
+    conn.commit()
+
+    # Seed defaults only if table is empty
+    cursor.execute("SELECT COUNT(*) FROM menu_options")
+    if cursor.fetchone()[0] == 0:
+        default_options = [
+            # Drinks
+            ("drink", "Latte"), ("drink", "Cold Brew"), ("drink", "Tea"),
+            ("drink", "Standard Coffee"), ("drink", "De-Caf"),
+            # Milk
+            ("milk", "Whole"), ("milk", "Oat"), ("milk", "Fairlife"), ("milk", "None"),
+            # Flavors
+            ("flavor", "Caramel"), ("flavor", "Mocha"), ("flavor", "Hazelnut"),
+            ("flavor", "Seasonal"), ("flavor", "None")
+        ]
+        cursor.executemany("INSERT INTO menu_options (category, label) VALUES (?, ?)", default_options)
+        conn.commit()
+
+    conn.close()
+
+# --- Initialize both tables at app startup ---
+init_db()
+init_menu_options()
+
+# --- App Menu Choices ---
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
-
-
 
 # --- Submit a new order ---
 def submit_order(name, drink, milk, flavors, pickup):
@@ -66,9 +101,6 @@ def update_status(order_id, new_status):
     cursor.execute('UPDATE orders SET status = ? WHERE id = ?', (new_status, order_id))
     conn.commit()
     conn.close()
-
-# --- Initialize the DB when the app starts ---
-init_db()
 
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
