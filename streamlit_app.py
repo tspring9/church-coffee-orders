@@ -111,9 +111,9 @@ if choice == "Place Order":
             filtered_slots.append(t)
         else:
             try:
-                slot_dt = datetime.strptime(t, "%H:%M").replace(
-                    year=now.year, month=now.month, day=now.day, tzinfo=central
-                )
+                slot_dt = central.localize(datetime.strptime(t, "%H:%M").replace(
+                    year=now.year, month=now.month, day=now.day
+                ))
                 if slot_dt >= now:
                     filtered_slots.append(t)
             except ValueError:
