@@ -87,13 +87,6 @@ if choice == "Place Order":
     # Get current CST time
     central = pytz.timezone("America/Chicago")
     now = datetime.now(central)
-    
-    # Round up to nearest 10-minute block
-    rounded_minute = int(ceil(now.minute / 10.0) * 10)
-    if rounded_minute == 60:
-        now = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=1)
-    else:
-        now = now.replace(minute=rounded_minute, second=0, microsecond=0)
 
     # Optional: for testing only
     # now = central.localize(datetime(now.year, now.month, now.day, 8, 1))  # Simulated 8:01 AM
