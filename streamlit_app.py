@@ -20,6 +20,8 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+
+    # Orders table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,6 +34,16 @@ def init_db():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+
+    # Time slots table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS time_slots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            label TEXT NOT NULL UNIQUE,
+            active INTEGER DEFAULT 1
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
