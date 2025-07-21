@@ -315,26 +315,26 @@ elif choice == "🔒 Order Management":
                             st.rerun()
 
         # --- TIME SLOTS ---
-        elif tab_choice == "Time Slots":
-            st.subheader("📅 Manage Time Slots")
+            elif tab_choice == "Time Slots":
+                st.subheader("📅 Manage Time Slots")
 
-            # Add new time slot
-            with st.form("add_time_slot"):
-                new_slot = st.text_input("New Time Slot (e.g., 7:45)")
-                add_slot = st.form_submit_button("Add Slot")
-                if add_slot:
-                    if new_slot:
-                        try:
-                            conn = get_db_connection()
-                            cur = conn.cursor()
-                            cur.execute("INSERT INTO time_slots (label) VALUES (?)", (new_slot.strip(),))
-                            conn.commit()
-                            st.success(f"✅ Added time slot: {new_slot}")
-                            st.rerun()
-                        except sqlite3.IntegrityError:
-                            st.warning("⚠️ Time slot already exists.")
-                        finally:
-                            conn.close()
+                # Add new time slot
+                with st.form("add_time_slot"):
+                    new_slot = st.text_input("New Time Slot (e.g., 7:45)")
+                    add_slot = st.form_submit_button("Add Slot")
+                    if add_slot:
+                        if new_slot:
+                            try:
+                                conn = get_db_connection()
+                                cur = conn.cursor()
+                                cur.execute("INSERT INTO time_slots (label) VALUES (?)", (new_slot.strip(),))
+                                conn.commit()
+                                st.success(f"✅ Added time slot: {new_slot}")
+                                st.rerun()
+                            except sqlite3.IntegrityError:
+                                st.warning("⚠️ Time slot already exists.")
+                            finally:
+                                conn.close()
 
             # Edit existing time slots
             conn = get_db_connection()
