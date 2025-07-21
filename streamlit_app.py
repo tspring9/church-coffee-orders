@@ -110,11 +110,6 @@ def get_active_menu_items(category):
     conn.close()
     return [row["label"] for row in rows]
 
-# In your order form:
-drink = st.selectbox("Drink", get_active_menu_items("drink"))
-milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
-flavors = st.selectbox("Flavors", get_active_menu_items("flavor"))
-
 
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
@@ -162,11 +157,10 @@ if choice == "Place Order":
     # Order Form
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
-        drink = st.selectbox("Drink", ["Latte", "Cold Brew", "Tea", "Standard Coffee", "De-Caf"])
-        milk = st.selectbox("Milk Type", ["Whole", "Oat", "Fairlife", "None"])
-        flavors = st.selectbox("Flavors", ["Caramel", "Mocha", "Hazelnut", "Seasonal", "None"])
-        pickup = st.selectbox("Pickup Time", filtered_slots)
-        submit = st.form_submit_button("Submit Order")
+        drink = st.selectbox("Drink", get_active_menu_items("drink"))
+        milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
+        flavors = st.selectbox("Flavors", get_active_menu_items("flavor"))
+
 
     if submit:
         if not name or not drink:
