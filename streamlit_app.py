@@ -312,7 +312,7 @@ elif choice == "🔒 Order Management":
                         cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row['id']))
                         conn.commit()
                         conn.close()
-                        st.experimental_rerun()
+                        st.rerun()
 
 
 
