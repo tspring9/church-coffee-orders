@@ -258,61 +258,61 @@ elif choice == "🔒 Order Management":
                 )
 
     # ---- Inventory sub-tab ----
-elif subtab == "Menu Settings":
-    if not st.session_state.volunteer_authenticated:
-        st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
-    else:
-        tab_choice = st.radio("What would you like to manage?", ["Menu Items", "Time Slots"], horizontal=True)
+    elif subtab == "Menu Settings":
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
+        else:
+            tab_choice = st.radio("What would you like to manage?", ["Menu Items", "Time Slots"], horizontal=True)
 
-        # --- MENU ITEMS ---
-        if tab_choice == "Menu Items":
-            st.subheader("🧾 Menu Editor")
+            # --- MENU ITEMS ---
+            if tab_choice == "Menu Items":
+                st.subheader("🧾 Menu Editor")
 
-            # --- Add New Item ---
-            st.markdown("### ➕ Add a New Menu Item")
-            with st.form(key="add_menu_item_form"):
-                new_label = st.text_input("Item Name")
-                new_category = st.selectbox("Category", ["drink", "milk", "flavor"])
-                add_item = st.form_submit_button("Add to Menu")
+                # --- Add New Item ---
+                st.markdown("### ➕ Add a New Menu Item")
+                with st.form(key="add_menu_item_form"):
+                    new_label = st.text_input("Item Name")
+                    new_category = st.selectbox("Category", ["drink", "milk", "flavor"])
+                    add_item = st.form_submit_button("Add to Menu")
 
-                if add_item:
-                    if not new_label.strip():
-                        st.error("Item name cannot be empty.")
-                    else:
-                        conn = get_db_connection()
-                        cur = conn.cursor()
-                        try:
-                            cur.execute("INSERT INTO menu_options (category, label) VALUES (?, ?)", (new_category, new_label.strip()))
+                    if add_item:
+                        if not new_label.strip():
+                            st.error("Item name cannot be empty.")
+                        else:
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            try:
+                                cur.execute("INSERT INTO menu_options (category, label) VALUES (?, ?)", (new_category, new_label.strip()))
+                                conn.commit()
+                                st.success(f"✅ Added '{new_label}' to {new_category}s!")
+                                st.rerun()
+                            except sqlite3.IntegrityError:
+                                st.warning("⚠️ This item already exists.")
+                            finally:
+                                conn.close()
+
+                # --- Edit Active Items ---
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM menu_options ORDER BY category, label")
+                rows = cursor.fetchall()
+                conn.close()
+
+                for row in rows:
+                    col1, col2, col3 = st.columns([2, 2, 1])
+                    with col1:
+                        st.write(f"**{row['label']}**")
+                    with col2:
+                        st.write(f"Category: {row['category']}")
+                    with col3:
+                        new_status = st.checkbox("Available", value=bool(row['active']), key=f"menu_{row['id']}")
+                        if new_status != bool(row['active']):
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row['id']))
                             conn.commit()
-                            st.success(f"✅ Added '{new_label}' to {new_category}s!")
-                            st.rerun()
-                        except sqlite3.IntegrityError:
-                            st.warning("⚠️ This item already exists.")
-                        finally:
                             conn.close()
-
-            # --- Edit Active Items ---
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM menu_options ORDER BY category, label")
-            rows = cursor.fetchall()
-            conn.close()
-
-            for row in rows:
-                col1, col2, col3 = st.columns([2, 2, 1])
-                with col1:
-                    st.write(f"**{row['label']}**")
-                with col2:
-                    st.write(f"Category: {row['category']}")
-                with col3:
-                    new_status = st.checkbox("Available", value=bool(row['active']), key=f"menu_{row['id']}")
-                    if new_status != bool(row['active']):
-                        conn = get_db_connection()
-                        cur = conn.cursor()
-                        cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row['id']))
-                        conn.commit()
-                        conn.close()
-                        st.rerun()
+                            st.rerun()
 
         # --- TIME SLOTS ---
         elif tab_choice == "Time Slots":
