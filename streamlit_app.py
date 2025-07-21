@@ -42,11 +42,13 @@ def init_menu_options():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS menu_options (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,     -- 'drink', 'milk', or 'flavor'
+            category TEXT NOT NULL,
             label TEXT NOT NULL,
-            active INTEGER DEFAULT 1    -- 1 = active, 0 = hidden
+            active INTEGER DEFAULT 1,
+            UNIQUE(category, label)
         )
     ''')
+
     conn.commit()
 
     # Seed defaults only if table is empty
@@ -62,7 +64,10 @@ def init_menu_options():
             ("flavor", "Caramel"), ("flavor", "Mocha"), ("flavor", "Hazelnut"),
             ("flavor", "Seasonal"), ("flavor", "None")
         ]
-        cursor.executemany("INSERT INTO menu_options (category, label) VALUES (?, ?)", default_options)
+        cursor.executemany(
+            "INSERT OR IGNORE INTO menu_options (category, label) VALUES (?, ?)",
+            default_options
+        )
         conn.commit()
 
     conn.close()
