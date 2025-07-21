@@ -259,10 +259,10 @@ elif choice == "🔒 Order Management":
 
     # ---- Inventory sub-tab ----
     elif subtab == "Menu Settings":
-    if not st.session_state.volunteer_authenticated:
-        st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
-    else:
-        st.subheader("🧾 Menu Editor")
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
+        else:
+            st.subheader("🧾 Menu Editor")
 
         # --- Add New Item ---
         st.markdown("### ➕ Add a New Menu Item")
