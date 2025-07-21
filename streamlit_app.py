@@ -160,6 +160,8 @@ if choice == "Place Order":
         drink = st.selectbox("Drink", get_active_menu_items("drink"))
         milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
         flavors = st.selectbox("Flavors", get_active_menu_items("flavor"))
+        pickup = st.selectbox("Pickup Time", filtered_slots)
+        submit = st.form_submit_button("Submit Order")   
 
 
     if submit:
