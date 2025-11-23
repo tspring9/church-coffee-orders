@@ -57,6 +57,7 @@ def init_db():
 def init_menu_options():
     conn = get_db_connection()
     cursor = conn.cursor()
+
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS menu_options (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -69,33 +70,48 @@ def init_menu_options():
 
     conn.commit()
 
+    # 🔹 Add sort_order column if it doesn't exist yet
+    cursor.execute("PRAGMA table_info(menu_options)")
+    cols = [row[1] for row in cursor.fetchall()]
+    if "sort_order" not in cols:
+        cursor.execute("ALTER TABLE menu_options ADD COLUMN sort_order INTEGER DEFAULT 0")
+        conn.commit()
+
+
     # Seed defaults only if table is empty
     cursor.execute("SELECT COUNT(*) FROM menu_options")
     if cursor.fetchone()[0] == 0:
         default_options = [
             # Drinks
-            ("drink", "Latte"), ("drink", "Macchiato"), ("drink", "Cold Brew"),
-            ("drink", "Americano"),
+            ("drink", "Latte", 1),
+            ("drink", "Macchiato", 2),
+            ("drink", "Cold Brew", 3),
+            ("drink", "Americana", 4),
 
             # Milk
-            ("milk", "1%"), ("milk", "Almond"), ("milk", "Fairlife"), ("milk", "None"),
+            ("milk", "1%", 1),
+            ("milk", "Almond", 2),
+            ("milk", "Fairlife", 3),
+            ("milk", "None", 99),
 
             # Flavors (syrups)
-            ("flavor", "Vanilla"), ("flavor", "Mocha"),
-            ("flavor", "Hazelnut"), ("flavor", "None"),
+            ("flavor", "Vanilla", 1),
+            ("flavor", "Hazelnut", 2),
+            ("flavor", "Mocha", 3),
+            ("flavor", "None", 99),
 
             # Drizzles (toppings)
-            ("drizzle", "Chocolate Drizzle"),
-            ("drizzle", "Caramel Drizzle"),
-            ("drizzle", "None"),
+            ("drizzle", "Chocolate Drizzle", 1),
+            ("drizzle", "Caramel Drizzle", 2),
+            ("drizzle", "None", 99),
         ]
+
         cursor.executemany(
-            "INSERT OR IGNORE INTO menu_options (category, label) VALUES (?, ?)",
+            "INSERT OR IGNORE INTO menu_options (category, label, sort_order) VALUES (?, ?, ?)",
             default_options
         )
         conn.commit()
 
-    conn.close()
 
 # --- Initialize both tables at app startup ---
 init_db()
@@ -135,7 +151,10 @@ def update_status(order_id, new_status):
 def get_active_menu_items(category):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT label FROM menu_options WHERE category = ? AND active = 1', (category,))
+    cursor.execute(
+        'SELECT label FROM menu_options WHERE category = ? AND active = 1 ORDER BY sort_order ASC',
+        (category,)
+    )
     rows = cursor.fetchall()
     conn.close()
     return [row["label"] for row in rows]
