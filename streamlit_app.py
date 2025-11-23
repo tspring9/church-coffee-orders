@@ -75,7 +75,7 @@ def init_menu_options():
         default_options = [
             # Drinks
             ("drink", "Latte"), ("drink", "Macchiato"), ("drink", "Cold Brew"),
-            ("drink", "Americana"),
+            ("drink", "Americano"),
 
             # Milk
             ("milk", "1%"), ("milk", "Almond"), ("milk", "Fairlife"), ("milk", "None"),
