@@ -83,24 +83,28 @@ def init_menu_options():
     if cursor.fetchone()[0] == 0:
         default_options = [
             # Drinks
+            ("drink", "Please select a drink", 0)
             ("drink", "Latte", 1),
             ("drink", "Macchiato", 2),
             ("drink", "Cold Brew", 3),
             ("drink", "Americana", 4),
 
             # Milk
+            ("milk", "Please select a milk", 0)
             ("milk", "1%", 1),
             ("milk", "Almond", 2),
             ("milk", "Fairlife", 3),
             ("milk", "None", 99),
 
             # Flavors (syrups)
+            ("flavor", "Please select a falvor", 0)
             ("flavor", "Vanilla", 1),
             ("flavor", "Hazelnut", 2),
             ("flavor", "Mocha", 3),
             ("flavor", "None", 99),
 
             # Drizzles (toppings)
+            ("drizzle", "Please select a Drizzle", 0)
             ("drizzle", "Chocolate Drizzle", 1),
             ("drizzle", "Caramel Drizzle", 2),
             ("drizzle", "None", 99),
@@ -215,12 +219,22 @@ if choice == "Place Order":
 
 
     if submit:
-        if not name or not drink:
-            st.error("Please provide your name and drink.")
+        # 1) Check name
+        if not name.strip():
+            st.error("Please provide your name.")
+        
+        # 2) Check that dropdowns are not still on the 'Please select...' placeholder
+        elif (
+            drink.startswith("Please") or
+            milk.startswith("Please")
+        ):
+            st.error("Please select a drink and milk type before submitting.")
+
+        
+        # 3) If all good, submit the order
         else:
             submit_order(name, drink, milk, flavors, drizzle, pickup)
             st.success("✅ Your order has been placed!")
-
 
 elif choice == "🔒 Order Management":
     st.header("Order Management")
