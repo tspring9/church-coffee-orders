@@ -53,35 +53,31 @@ def init_db():
     conn.commit()
     conn.close()
 
-# --- Initialize Menu Options (drinks, milks, flavors) ---
 def init_menu_options():
     conn = get_db_connection()
     cursor = conn.cursor()
 
+    # 1) Ensure table exists with correct base columns
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS menu_options (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             category TEXT NOT NULL,
             label TEXT NOT NULL,
             active INTEGER DEFAULT 1,
+            sort_order INTEGER DEFAULT 0,
             UNIQUE(category, label)
         )
     ''')
-
     conn.commit()
 
-    # 🔹 Add sort_order column if it doesn't exist yet
+    # 2) Safety: ensure sort_order column exists (old DB compatibility)
     cursor.execute("PRAGMA table_info(menu_options)")
     cols = [row[1] for row in cursor.fetchall()]
     if "sort_order" not in cols:
         cursor.execute("ALTER TABLE menu_options ADD COLUMN sort_order INTEGER DEFAULT 0")
         conn.commit()
 
-
-def init_menu_options():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
+    # 3) Seed defaults only if table is empty
     cursor.execute("SELECT COUNT(*) FROM menu_options")
     if cursor.fetchone()[0] == 0:
         default_options = [
@@ -106,7 +102,7 @@ def init_menu_options():
             ("flavor", "Mocha", 3),
             ("flavor", "None", 99),
 
-            # Drizzles (toppings)
+            # Drizzles
             ("drizzle", "Please select a drizzle", 0),
             ("drizzle", "Chocolate Drizzle", 1),
             ("drizzle", "Caramel Drizzle", 2),
@@ -120,6 +116,7 @@ def init_menu_options():
         conn.commit()
 
     conn.close()
+
 
 
 # --- Initialize both tables at app startup ---
