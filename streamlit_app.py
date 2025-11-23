@@ -35,6 +35,12 @@ def init_db():
         )
     ''')
 
+    # 🔹 Add drizzle_type column if it doesn't exist yet
+    cursor.execute("PRAGMA table_info(orders)")
+    cols = [row[1] for row in cursor.fetchall()]
+    if "drizzle_type" not in cols:
+        cursor.execute("ALTER TABLE orders ADD COLUMN drizzle_type TEXT")
+
     # Time slots table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS time_slots (
@@ -68,13 +74,20 @@ def init_menu_options():
     if cursor.fetchone()[0] == 0:
         default_options = [
             # Drinks
-            ("drink", "Latte"), ("drink", "Cold Brew"), ("drink", "Tea"),
-            ("drink", "Standard Coffee"), ("drink", "De-Caf"),
+            ("drink", "Latte"), ("drink", "Macchiato"), ("drink", "Cold Brew"),
+            ("drink", "Americana"),
+
             # Milk
-            ("milk", "Whole"), ("milk", "Oat"), ("milk", "Fairlife"), ("milk", "None"),
-            # Flavors
-            ("flavor", "Caramel"), ("flavor", "Mocha"), ("flavor", "Hazelnut"),
-            ("flavor", "Seasonal"), ("flavor", "None")
+            ("milk", "1%"), ("milk", "Almond"), ("milk", "Fairlife"), ("milk", "None"),
+
+            # Flavors (syrups)
+            ("flavor", "Vanilla"), ("flavor", "Mocha"),
+            ("flavor", "Hazelnut"), ("flavor", "None"),
+
+            # Drizzles (toppings)
+            ("drizzle", "Chocolate Drizzle"),
+            ("drizzle", "Caramel Drizzle"),
+            ("drizzle", "None"),
         ]
         cursor.executemany(
             "INSERT OR IGNORE INTO menu_options (category, label) VALUES (?, ?)",
@@ -92,13 +105,13 @@ init_menu_options()
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
 # --- Submit a new order ---
-def submit_order(name, drink, milk, flavors, pickup):
+def submit_order(name, drink, milk, flavors, drizzle, pickup):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO orders (customer_name, drink_type, milk_type, flavors, pickup_time)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (name, drink, milk, flavors, pickup))
+        INSERT INTO orders (customer_name, drink_type, milk_type, flavors, drizzle_type, pickup_time)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (name, drink, milk, flavors, drizzle, pickup))
     conn.commit()
     conn.close()
 
@@ -171,22 +184,24 @@ if choice == "Place Order":
                 st.warning(f"⚠️ Invalid time format: {t}")
 
 
-    # Order Form
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
         drink = st.selectbox("Drink", get_active_menu_items("drink"))
         milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
-        flavors = st.selectbox("Flavors", get_active_menu_items("flavor"))
+        flavors = st.selectbox("Flavor (syrup)", get_active_menu_items("flavor"))
+        drizzle = st.selectbox("Drizzle (topping)", get_active_menu_items("drizzle"))
         pickup = st.selectbox("Pickup Time", filtered_slots)
-        submit = st.form_submit_button("Submit Order")   
+        submit = st.form_submit_button("Submit Order")
+
 
 
     if submit:
         if not name or not drink:
             st.error("Please provide your name and drink.")
         else:
-            submit_order(name, drink, milk, flavors, pickup)
+            submit_order(name, drink, milk, flavors, drizzle, pickup)
             st.success("✅ Your order has been placed!")
+
 
 elif choice == "🔒 Order Management":
     st.header("Order Management")
@@ -226,6 +241,7 @@ elif choice == "🔒 Order Management":
                     st.write(f"👤 **Name:** {row['customer_name']}")
                     st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
                     st.write(f"🍯 **Flavors:** {row['flavors']}")
+                    st.write(f"🍫 **Drizzle:** {row['drizzle_type']}")
                     st.write(f"📅 **Placed:** {formatted_time}")
                     st.write(f"📅 **Pickup at:** {row['pickup_time']}")
                     st.write(f"🔖 **Status:** {row['status']}")
@@ -284,7 +300,7 @@ elif choice == "🔒 Order Management":
                 st.markdown("### ➕ Add a New Menu Item")
                 with st.form(key="add_menu_item_form"):
                     new_label = st.text_input("Item Name")
-                    new_category = st.selectbox("Category", ["drink", "milk", "flavor"])
+                    new_category = st.selectbox("Category", ["drink", "milk", "flavor", "drizzle"])
                     add_item = st.form_submit_button("Add to Menu")
 
                     if add_item:
