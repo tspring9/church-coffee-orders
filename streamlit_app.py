@@ -78,33 +78,36 @@ def init_menu_options():
         conn.commit()
 
 
-    # Seed defaults only if table is empty
+def init_menu_options():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
     cursor.execute("SELECT COUNT(*) FROM menu_options")
     if cursor.fetchone()[0] == 0:
         default_options = [
             # Drinks
-            ("drink", "Please select a drink", 0)
+            ("drink", "Please select a drink", 0),
             ("drink", "Latte", 1),
             ("drink", "Macchiato", 2),
             ("drink", "Cold Brew", 3),
-            ("drink", "Americana", 4),
+            ("drink", "Americano", 4),
 
             # Milk
-            ("milk", "Please select a milk", 0)
+            ("milk", "Please select a milk option", 0),
             ("milk", "1%", 1),
             ("milk", "Almond", 2),
             ("milk", "Fairlife", 3),
             ("milk", "None", 99),
 
             # Flavors (syrups)
-            ("flavor", "Please select a falvor", 0)
+            ("flavor", "Please select a flavor", 0),
             ("flavor", "Vanilla", 1),
             ("flavor", "Hazelnut", 2),
             ("flavor", "Mocha", 3),
             ("flavor", "None", 99),
 
             # Drizzles (toppings)
-            ("drizzle", "Please select a Drizzle", 0)
+            ("drizzle", "Please select a drizzle", 0),
             ("drizzle", "Chocolate Drizzle", 1),
             ("drizzle", "Caramel Drizzle", 2),
             ("drizzle", "None", 99),
@@ -115,6 +118,8 @@ def init_menu_options():
             default_options
         )
         conn.commit()
+
+    conn.close()
 
 
 # --- Initialize both tables at app startup ---
