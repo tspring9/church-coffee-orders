@@ -238,10 +238,12 @@ if choice == "Place Order":
             submit_order(name, drink, milk, flavors, drizzle, pickup)
             st.success("✅ Your order has been placed!")
 
+    # Sub-tabs for Manage Orders, Reports, Inventory, Menu Settings
+
 elif choice == "🔒 Order Management":
     st.header("Order Management")
 
-    # Sub-tabs for Manage Orders, Reports, Inventory
+    # Sub-tabs for Manage Orders, Reports, Inventory, Menu Settings
     subtab = st.radio(
         "Select View:",
         ["Manage Orders", "Reports", "Inventory", "Menu Settings"],
@@ -293,8 +295,6 @@ elif choice == "🔒 Order Management":
                         st.rerun()
                     st.markdown("---")
 
-
-
     # ---- Reports sub-tab ----
     elif subtab == "Reports":
         if not st.session_state.volunteer_authenticated:
@@ -321,6 +321,60 @@ elif choice == "🔒 Order Management":
                 )
 
     # ---- Inventory sub-tab ----
+    elif subtab == "Inventory":
+        if not st.session_state.volunteer_authenticated:
+            st.warning("Please enter the passcode in 'Manage Orders' to access inventory.")
+        else:
+            st.subheader("📦 Inventory / Usage Overview")
+
+            orders = get_orders()
+            if not orders:
+                st.info("No orders yet.")
+            else:
+                import pandas as pd
+                df = pd.DataFrame([dict(row) for row in orders])
+
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    st.markdown("### ☕ Drinks Used")
+                    drink_summary = (
+                        df.groupby("drink_type")
+                          .size()
+                          .reset_index(name="Total Orders")
+                          .sort_values("Total Orders", ascending=False)
+                    )
+                    st.dataframe(drink_summary, use_container_width=True)
+
+                    st.markdown("### 🥛 Milk Types Used")
+                    milk_summary = (
+                        df.groupby("milk_type")
+                          .size()
+                          .reset_index(name="Total Uses")
+                          .sort_values("Total Uses", ascending=False)
+                    )
+                    st.dataframe(milk_summary, use_container_width=True)
+
+                with col2:
+                    st.markdown("### 🍯 Flavors (Syrups) Used")
+                    flavor_summary = (
+                        df.groupby("flavors")
+                          .size()
+                          .reset_index(name="Total Uses")
+                          .sort_values("Total Uses", ascending=False)
+                    )
+                    st.dataframe(flavor_summary, use_container_width=True)
+
+                    st.markdown("### 🍫 Drizzles Used")
+                    drizzle_summary = (
+                        df.groupby("drizzle_type")
+                          .size()
+                          .reset_index(name="Total Uses")
+                          .sort_values("Total Uses", ascending=False)
+                    )
+                    st.dataframe(drizzle_summary, use_container_width=True)
+
+    # ---- Menu Settings sub-tab ----
     elif subtab == "Menu Settings":
         if not st.session_state.volunteer_authenticated:
             st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
@@ -345,7 +399,10 @@ elif choice == "🔒 Order Management":
                             conn = get_db_connection()
                             cur = conn.cursor()
                             try:
-                                cur.execute("INSERT INTO menu_options (category, label) VALUES (?, ?)", (new_category, new_label.strip()))
+                                cur.execute(
+                                    "INSERT INTO menu_options (category, label) VALUES (?, ?)",
+                                    (new_category, new_label.strip())
+                                )
                                 conn.commit()
                                 st.success(f"✅ Added '{new_label}' to {new_category}s!")
                                 st.rerun()
@@ -357,7 +414,7 @@ elif choice == "🔒 Order Management":
                 # --- Edit Active Items ---
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM menu_options ORDER BY category, label")
+                cursor.execute("SELECT * FROM menu_options ORDER BY category, label, sort_order")
                 rows = cursor.fetchall()
                 conn.close()
 
@@ -377,7 +434,7 @@ elif choice == "🔒 Order Management":
                             conn.close()
                             st.rerun()
 
-        # --- TIME SLOTS ---
+            # --- TIME SLOTS ---
             elif tab_choice == "Time Slots":
                 st.subheader("📅 Manage Time Slots")
 
@@ -399,29 +456,26 @@ elif choice == "🔒 Order Management":
                             finally:
                                 conn.close()
 
-            # Edit existing time slots
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT * FROM time_slots ORDER BY label")
-            slots = cursor.fetchall()
-            conn.close()
+                # Edit existing time slots
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT * FROM time_slots ORDER BY label")
+                slots = cursor.fetchall()
+                conn.close()
 
-            for row in slots:
-                col1, col2 = st.columns([3, 1])
-                with col1:
-                    st.write(f"🕒 {row['label']}")
-                with col2:
-                    enabled = st.checkbox("Available", value=bool(row['active']), key=f"time_{row['id']}")
-                    if enabled != bool(row['active']):
-                        conn = get_db_connection()
-                        cur = conn.cursor()
-                        cur.execute("UPDATE time_slots SET active = ? WHERE id = ?", (int(enabled), row['id']))
-                        conn.commit()
-                        conn.close()
-                        st.rerun()
-
-
-
+                for row in slots:
+                    col1, col2 = st.columns([3, 1])
+                    with col1:
+                        st.write(f"🕒 {row['label']}")
+                    with col2:
+                        enabled = st.checkbox("Available", value=bool(row['active']), key=f"time_{row['id']}")
+                        if enabled != bool(row['active']):
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            cur.execute("UPDATE time_slots SET active = ? WHERE id = ?", (int(enabled), row['id']))
+                            conn.commit()
+                            conn.close()
+                            st.rerun()
 
 
 elif choice == "Customer Display":
