@@ -399,10 +399,18 @@ elif choice == "🔒 Order Management":
                             conn = get_db_connection()
                             cur = conn.cursor()
                             try:
+                                # Find the current max sort_order for this category, then append to bottom
                                 cur.execute(
-                                    "INSERT INTO menu_options (category, label) VALUES (?, ?)",
-                                    (new_category, new_label.strip())
+                                    "SELECT COALESCE(MAX(sort_order), 0) FROM menu_options WHERE category = ?",
+                                    (new_category,)
                                 )
+                                max_sort = cur.fetchone()[0]
+                                
+                                cur.execute(
+                                    "INSERT INTO menu_options (category, label, sort_order) VALUES (?, ?, ?)",
+                                    (new_category, new_label.strip(), max_sort + 1)
+                                )
+
                                 conn.commit()
                                 st.success(f"✅ Added '{new_label}' to {new_category}s!")
                                 st.rerun()
