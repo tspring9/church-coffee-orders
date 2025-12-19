@@ -255,6 +255,9 @@ elif choice == "🔒 Order Management":
         if "volunteer_authenticated" not in st.session_state:
             st.session_state.volunteer_authenticated = False
 
+        if "show_completed_orders" not in st.session_state:
+            st.session_state.show_completed_orders = False
+
         if not st.session_state.volunteer_authenticated:
             passcode = st.text_input("Enter passcode to manage orders", type="password")
             if passcode == "2021":
@@ -262,10 +265,24 @@ elif choice == "🔒 Order Management":
                 st.rerun()
             else:
                 st.warning("Please enter the correct passcode to access management tools.")
-        else:
+                else:
+            # ✅ NEW: Toggle button to show/hide completed orders
+            btn_label = "Unhide completed orders" if not st.session_state.show_completed_orders else "Hide completed orders"
+            if st.button(btn_label):
+                st.session_state.show_completed_orders = not st.session_state.show_completed_orders
+                st.rerun()
+
             orders = get_orders()
+
+            # ✅ NEW: Filter out completed/cancelled unless toggled on
+            if not st.session_state.show_completed_orders:
+                orders = [o for o in orders if o["status"] not in ("complete", "cancelled")]
+
             if not orders:
-                st.info("No orders yet.")
+                if st.session_state.show_completed_orders:
+                    st.info("No orders yet.")
+                else:
+                    st.info("No active orders (completed orders are hidden).")
             else:
                 central = pytz.timezone("America/Chicago")
                 for row in orders:
@@ -293,7 +310,9 @@ elif choice == "🔒 Order Management":
                     if col3.button("Mark Complete", key=f"complete_{row['id']}"):
                         update_status(row['id'], "complete")
                         st.rerun()
+
                     st.markdown("---")
+
 
     # ---- Reports sub-tab ----
     elif subtab == "Reports":
