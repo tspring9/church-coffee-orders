@@ -254,11 +254,14 @@ elif choice == "🔒 Order Management":
     if subtab == "Manage Orders":
         if "volunteer_authenticated" not in st.session_state:
             st.session_state.volunteer_authenticated = False
-
+    
         # ✅ Track whether completed orders are visible
         if "show_completed_orders" not in st.session_state:
             st.session_state.show_completed_orders = False
     
+        # -------------------------
+        # 1) Login gate
+        # -------------------------
         if not st.session_state.volunteer_authenticated:
             passcode = st.text_input("Enter passcode to manage orders", type="password")
             if passcode == "2021":
@@ -266,58 +269,63 @@ elif choice == "🔒 Order Management":
                 st.rerun()
             else:
                 st.warning("Please enter the correct passcode to access management tools.")
-            else:
-                # ✅ Hide/Unhide completed orders button
-                btn_label = (
-                    "Unhide completed orders"
-                    if not st.session_state.show_completed_orders
-                    else "Hide completed orders"
-                )
-                if st.button(btn_label):
-                    st.session_state.show_completed_orders = not st.session_state.show_completed_orders
-                    st.rerun()
-        
-                orders = get_orders()
-        
-                # ✅ Filter out completed/cancelled unless toggled on
-                if not st.session_state.show_completed_orders:
-                    orders = [o for o in orders if o["status"] not in ("complete", "cancelled")]
-        
-                if not orders:
-                    if st.session_state.show_completed_orders:
-                        st.info("No orders yet.")
-                    else:
-                        st.info("No active orders (completed orders are hidden).")
+    
+        # -------------------------
+        # 2) Authenticated view
+        # -------------------------
+        else:
+            # ✅ Hide/Unhide completed orders button
+            btn_label = (
+                "Unhide completed orders"
+                if not st.session_state.show_completed_orders
+                else "Hide completed orders"
+            )
+            if st.button(btn_label):
+                st.session_state.show_completed_orders = not st.session_state.show_completed_orders
+                st.rerun()
+    
+            orders = get_orders()
+    
+            # ✅ Filter out completed/cancelled unless toggled on
+            if not st.session_state.show_completed_orders:
+                orders = [o for o in orders if o["status"] not in ("complete", "cancelled")]
+    
+            if not orders:
+                if st.session_state.show_completed_orders:
+                    st.info("No orders yet.")
                 else:
-                    central = pytz.timezone("America/Chicago")
-        
-                    for row in orders:
-                        utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
-                        utc_dt = pytz.utc.localize(utc_dt)
-                        central_dt = utc_dt.astimezone(central)
-                        formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
-        
-                        st.write(f"**Order ID:** {row['id']}")
-                        st.write(f"👤 **Name:** {row['customer_name']}")
-                        st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
-                        st.write(f"🍯 **Flavors:** {row['flavors']}")
-                        st.write(f"🍫 **Drizzle:** {row['drizzle_type']}")
-                        st.write(f"📅 **Placed:** {formatted_time}")
-                        st.write(f"📅 **Pickup at:** {row['pickup_time']}")
-                        st.write(f"🔖 **Status:** {row['status']}")
-        
-                        col1, col2, col3 = st.columns(3)
-                        if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
-                            update_status(row["id"], "in_progress")
-                            st.rerun()
-                        if col2.button("Mark Ready", key=f"ready_{row['id']}"):
-                            update_status(row["id"], "ready")
-                            st.rerun()
-                        if col3.button("Mark Complete", key=f"complete_{row['id']}"):
-                            update_status(row["id"], "complete")
-                            st.rerun()
-        
-                        st.markdown("---")
+                    st.info("No active orders (completed orders are hidden).")
+            else:
+                central = pytz.timezone("America/Chicago")
+    
+                for row in orders:
+                    utc_dt = datetime.strptime(row["timestamp"], "%Y-%m-%d %H:%M:%S")
+                    utc_dt = pytz.utc.localize(utc_dt)
+                    central_dt = utc_dt.astimezone(central)
+                    formatted_time = central_dt.strftime("%Y-%m-%d %I:%M %p %Z")
+    
+                    st.write(f"**Order ID:** {row['id']}")
+                    st.write(f"👤 **Name:** {row['customer_name']}")
+                    st.write(f"☕ **Drink:** {row['drink_type']} with {row['milk_type']} milk")
+                    st.write(f"🍯 **Flavors:** {row['flavors']}")
+                    st.write(f"🍫 **Drizzle:** {row['drizzle_type']}")
+                    st.write(f"📅 **Placed:** {formatted_time}")
+                    st.write(f"📅 **Pickup at:** {row['pickup_time']}")
+                    st.write(f"🔖 **Status:** {row['status']}")
+    
+                    col1, col2, col3 = st.columns(3)
+                    if col1.button("Mark In Progress", key=f"progress_{row['id']}"):
+                        update_status(row["id"], "in_progress")
+                        st.rerun()
+                    if col2.button("Mark Ready", key=f"ready_{row['id']}"):
+                        update_status(row["id"], "ready")
+                        st.rerun()
+                    if col3.button("Mark Complete", key=f"complete_{row['id']}"):
+                        update_status(row["id"], "complete")
+                        st.rerun()
+    
+                    st.markdown("---")
+
 
 
 
