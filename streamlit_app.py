@@ -252,8 +252,8 @@ elif choice == "🔒 Order Management":
 
     # ---- Manage Orders sub-tab ----
     if subtab == "Manage Orders":
-    if "volunteer_authenticated" not in st.session_state:
-        st.session_state.volunteer_authenticated = False
+        if "volunteer_authenticated" not in st.session_state:
+            st.session_state.volunteer_authenticated = False
 
     # ✅ Track whether completed orders are visible
     if "show_completed_orders" not in st.session_state:
