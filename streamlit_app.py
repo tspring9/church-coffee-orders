@@ -231,21 +231,38 @@ if choice == "Place Order":
     now = datetime.now(central)
     st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
 
-    time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10:00"]
+        # --- Time slots from DB + ASAP ---
+    db_slots = get_active_time_slots()
+
+    # Ensure ASAP exists (even if not in DB)
+    if "ASAP" not in db_slots:
+        db_slots = ["ASAP"] + db_slots
+    else:
+        # Move ASAP to the top
+        db_slots = ["ASAP"] + [s for s in db_slots if s != "ASAP"]
 
     filtered_slots = []
-    for t in time_slots:
+    for t in db_slots:
         if t == "ASAP":
             filtered_slots.append(t)
-        else:
-            slot_dt = central.localize(datetime.strptime(t, "%H:%M").replace(
-                year=now.year, month=now.month, day=now.day
-            ))
+            continue
+
+        # Expect labels like "8:00", "9:10", etc.
+        try:
+            slot_dt = central.localize(
+                datetime.strptime(t, "%H:%M").replace(
+                    year=now.year, month=now.month, day=now.day
+                )
+            )
             if slot_dt >= now:
                 filtered_slots.append(t)
+        except ValueError:
+            # If someone types a bad value in admin, don't crash the app
+            st.warning(f"⚠️ Invalid time slot in settings: {t}")
 
-    # ✅ IMPORTANT: drink selection OUTSIDE the form so it triggers reruns
-    drink = st.selectbox("Drink", get_active_menu_items("drink"), key="drink_choice")
+    if not filtered_slots:
+        st.error("No pickup times available. Please enable time slots in Menu Settings.")
+        st.stop()
 
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
@@ -253,10 +270,13 @@ if choice == "Place Order":
         milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
         flavors = st.selectbox(
             "Flavor (syrup)",
-            get_active_menu_items("flavor", drink_type=drink),  # ✅ now actually updates
+            get_active_menu_items("flavor", drink_type=drink),
         )
         drizzle = st.selectbox("Drizzle (topping)", get_active_menu_items("drizzle"))
         pickup = st.selectbox("Pickup Time", filtered_slots)
+
+        submit = st.form_submit_button("Submit Order")
+
 
         submit = st.form_submit_button("Submit Order")
 
