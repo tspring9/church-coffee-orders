@@ -41,15 +41,6 @@ def init_db():
     if "drizzle_type" not in cols:
         cursor.execute("ALTER TABLE orders ADD COLUMN drizzle_type TEXT")
 
-    # Time slots table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS time_slots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            label TEXT NOT NULL UNIQUE,
-            active INTEGER DEFAULT 1
-        )
-    ''')
-
     conn.commit()
     conn.close()
 
@@ -433,7 +424,7 @@ elif choice == "🔒 Order Management":
         else:
             tab_choice = st.radio(
                 "What would you like to manage?",
-                ["Menu Items", "Time Slots"],
+                ["Menu Items"],
                 horizontal=True
             )
     
