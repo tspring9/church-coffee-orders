@@ -77,6 +77,28 @@ def init_menu_options():
         cursor.execute("ALTER TABLE menu_options ADD COLUMN sort_order INTEGER DEFAULT 0")
         conn.commit()
 
+    # 2b) Add espresso/cold brew targeting columns (old DB compatibility)
+    cursor.execute("PRAGMA table_info(menu_options)")
+    cols = [row[1] for row in cursor.fetchall()]
+    
+    if "espresso_enabled" not in cols:
+        cursor.execute("ALTER TABLE menu_options ADD COLUMN espresso_enabled INTEGER DEFAULT 1")
+        conn.commit()
+    
+    if "cold_brew_enabled" not in cols:
+        cursor.execute("ALTER TABLE menu_options ADD COLUMN cold_brew_enabled INTEGER DEFAULT 1")
+        conn.commit()
+    
+    # Optional safety: ensure existing flavor rows get defaults if nulls exist
+    cursor.execute("""
+        UPDATE menu_options
+        SET espresso_enabled = COALESCE(espresso_enabled, 1),
+            cold_brew_enabled = COALESCE(cold_brew_enabled, 1)
+        WHERE category = 'flavor'
+    """)
+    conn.commit()
+
+
     # 3) Seed defaults only if table is empty
     cursor.execute("SELECT COUNT(*) FROM menu_options")
     if cursor.fetchone()[0] == 0:
@@ -154,13 +176,40 @@ def update_status(order_id, new_status):
     conn.commit()
     conn.close()
     
-def get_active_menu_items(category):
+def get_active_menu_items(category, drink_type=None):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute(
-        'SELECT label FROM menu_options WHERE category = ? AND active = 1 ORDER BY sort_order ASC',
-        (category,)
-    )
+
+    # Only flavors are drink-dependent
+    if category == "flavor" and drink_type:
+        if drink_type == "Cold Brew":
+            cursor.execute("""
+                SELECT label
+                FROM menu_options
+                WHERE category = 'flavor'
+                  AND active = 1
+                  AND cold_brew_enabled = 1
+                ORDER BY sort_order ASC
+            """)
+        else:
+            # Espresso-based drinks: Latte, Macchiato, Americano, etc.
+            cursor.execute("""
+                SELECT label
+                FROM menu_options
+                WHERE category = 'flavor'
+                  AND active = 1
+                  AND espresso_enabled = 1
+                ORDER BY sort_order ASC
+            """)
+    else:
+        cursor.execute("""
+            SELECT label
+            FROM menu_options
+            WHERE category = ?
+              AND active = 1
+            ORDER BY sort_order ASC
+        """, (category,))
+
     rows = cursor.fetchall()
     conn.close()
     return [row["label"] for row in rows]
@@ -213,7 +262,7 @@ if choice == "Place Order":
         name = st.text_input("Your Name")
         drink = st.selectbox("Drink", get_active_menu_items("drink"))
         milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
-        flavors = st.selectbox("Flavor (syrup)", get_active_menu_items("flavor"))
+        flavors = st.selectbox("Flavor (syrup)", get_active_menu_items("flavor", drink_type=drink))
         drizzle = st.selectbox("Drizzle (topping)", get_active_menu_items("drizzle"))
         pickup = st.selectbox("Pickup Time", filtered_slots)
         submit = st.form_submit_button("Submit Order")
