@@ -182,7 +182,8 @@ def get_active_menu_items(category, drink_type=None):
 
     # Only flavors are drink-dependent
     if category == "flavor" and drink_type:
-        if drink_type == "Cold Brew":
+        drink_key = (drink_type or "").strip().lower()
+        if drink_key == "cold brew":
             cursor.execute("""
                 SELECT label
                 FROM menu_options
@@ -226,66 +227,48 @@ choice = st.sidebar.radio("Select Page:", menu)
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
 
-    from datetime import datetime
-    import pytz
-
-    # Get current CST time
     central = pytz.timezone("America/Chicago")
     now = datetime.now(central)
-
-    # Optional: for testing only
-    # now = central.localize(datetime(now.year, now.month, now.day, 8, 1))  # Simulated 8:01 AM
-
-    # Show current time
     st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
 
-    # Define all slots
     time_slots = ["ASAP", "8:00", "8:10", "8:20", "8:30", "8:40", "8:50", "9:00", "9:10", "9:20", "9:30", "9:40", "9:50", "10:00"]
 
-    # Filter out past slots
     filtered_slots = []
     for t in time_slots:
         if t == "ASAP":
             filtered_slots.append(t)
         else:
-            try:
-                slot_dt = central.localize(datetime.strptime(t, "%H:%M").replace(
-                    year=now.year, month=now.month, day=now.day
-                ))
-                if slot_dt >= now:
-                    filtered_slots.append(t)
-            except ValueError:
-                st.warning(f"⚠️ Invalid time format: {t}")
+            slot_dt = central.localize(datetime.strptime(t, "%H:%M").replace(
+                year=now.year, month=now.month, day=now.day
+            ))
+            if slot_dt >= now:
+                filtered_slots.append(t)
 
+    # ✅ IMPORTANT: drink selection OUTSIDE the form so it triggers reruns
+    drink = st.selectbox("Drink", get_active_menu_items("drink"), key="drink_choice")
 
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
-        drink = st.selectbox("Drink", get_active_menu_items("drink"))
+
         milk = st.selectbox("Milk Type", get_active_menu_items("milk"))
-        flavors = st.selectbox("Flavor (syrup)", get_active_menu_items("flavor", drink_type=drink))
+        flavors = st.selectbox(
+            "Flavor (syrup)",
+            get_active_menu_items("flavor", drink_type=drink),  # ✅ now actually updates
+        )
         drizzle = st.selectbox("Drizzle (topping)", get_active_menu_items("drizzle"))
         pickup = st.selectbox("Pickup Time", filtered_slots)
+
         submit = st.form_submit_button("Submit Order")
 
-
-
     if submit:
-        # 1) Check name
         if not name.strip():
             st.error("Please provide your name.")
-        
-        # 2) Check that dropdowns are not still on the 'Please select...' placeholder
-        elif (
-            drink.startswith("Please") or
-            milk.startswith("Please")
-        ):
+        elif drink.startswith("Please") or milk.startswith("Please"):
             st.error("Please select a drink and milk type before submitting.")
-
-        
-        # 3) If all good, submit the order
         else:
             submit_order(name, drink, milk, flavors, drizzle, pickup)
             st.success("✅ Your order has been placed!")
+
 
     # Sub-tabs for Manage Orders, Reports, Inventory, Menu Settings
 
