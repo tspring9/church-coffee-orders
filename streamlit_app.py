@@ -149,13 +149,13 @@ init_menu_options()
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
 # --- Submit a new order ---
-def submit_order(name, drink, milk, flavors, drizzle, pickup):
+def submit_order(name, drink, milk, flavors, drizzle):
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         INSERT INTO orders (customer_name, drink_type, milk_type, flavors, drizzle_type, pickup_time)
         VALUES (?, ?, ?, ?, ?, ?)
-    ''', (name, drink, milk, flavors, drizzle, pickup))
+    ''', (name, drink, milk, flavors, drizzle, "ASAP"))
     conn.commit()
     conn.close()
 
@@ -231,38 +231,8 @@ if choice == "Place Order":
     now = datetime.now(central)
     st.info(f"🕒 Current time (CST): {now.strftime('%I:%M %p')}")
 
-        # --- Time slots from DB + ASAP ---
-    db_slots = get_active_time_slots()
-
-    # Ensure ASAP exists (even if not in DB)
-    if "ASAP" not in db_slots:
-        db_slots = ["ASAP"] + db_slots
-    else:
-        # Move ASAP to the top
-        db_slots = ["ASAP"] + [s for s in db_slots if s != "ASAP"]
-
-    filtered_slots = []
-    for t in db_slots:
-        if t == "ASAP":
-            filtered_slots.append(t)
-            continue
-
-        # Expect labels like "8:00", "9:10", etc.
-        try:
-            slot_dt = central.localize(
-                datetime.strptime(t, "%H:%M").replace(
-                    year=now.year, month=now.month, day=now.day
-                )
-            )
-            if slot_dt >= now:
-                filtered_slots.append(t)
-        except ValueError:
-            # If someone types a bad value in admin, don't crash the app
-            st.warning(f"⚠️ Invalid time slot in settings: {t}")
-
-    if not filtered_slots:
-        st.error("No pickup times available. Please enable time slots in Menu Settings.")
-        st.stop()
+    # ✅ Drink selection OUTSIDE the form so flavor list updates immediately
+    drink = st.selectbox("Drink", get_active_menu_items("drink"), key="drink_choice")
 
     with st.form(key="order_form"):
         name = st.text_input("Your Name")
@@ -273,10 +243,6 @@ if choice == "Place Order":
             get_active_menu_items("flavor", drink_type=drink),
         )
         drizzle = st.selectbox("Drizzle (topping)", get_active_menu_items("drizzle"))
-        pickup = st.selectbox("Pickup Time", filtered_slots)
-
-        submit = st.form_submit_button("Submit Order")
-
 
         submit = st.form_submit_button("Submit Order")
 
@@ -286,8 +252,9 @@ if choice == "Place Order":
         elif drink.startswith("Please") or milk.startswith("Please"):
             st.error("Please select a drink and milk type before submitting.")
         else:
-            submit_order(name, drink, milk, flavors, drizzle, pickup)
+            submit_order(name, drink, milk, flavors, drizzle)
             st.success("✅ Your order has been placed!")
+
 
 
     # Sub-tabs for Manage Orders, Reports, Inventory, Menu Settings
@@ -362,7 +329,6 @@ elif choice == "🔒 Order Management":
                     st.write(f"🍯 **Flavors:** {row['flavors']}")
                     st.write(f"🍫 **Drizzle:** {row['drizzle_type']}")
                     st.write(f"📅 **Placed:** {formatted_time}")
-                    st.write(f"📅 **Pickup at:** {row['pickup_time']}")
                     st.write(f"🔖 **Status:** {row['status']}")
     
                     col1, col2, col3 = st.columns(3)
@@ -594,64 +560,6 @@ elif choice == "🔒 Order Management":
                             cur.execute(
                                 "UPDATE menu_options SET active = ? WHERE id = ?",
                                 (int(active_val), row["id"]),
-                            )
-                            conn.commit()
-                            conn.close()
-                            st.rerun()
-    
-            # =========================
-            # TIME SLOTS
-            # =========================
-            elif tab_choice == "Time Slots":
-                st.subheader("📅 Manage Time Slots")
-    
-                # Add new time slot
-                with st.form("add_time_slot"):
-                    new_slot = st.text_input("New Time Slot (e.g., 7:45)")
-                    add_slot = st.form_submit_button("Add Slot")
-    
-                    if add_slot:
-                        if not new_slot.strip():
-                            st.error("Time slot cannot be empty.")
-                        else:
-                            try:
-                                conn = get_db_connection()
-                                cur = conn.cursor()
-                                cur.execute(
-                                    "INSERT INTO time_slots (label) VALUES (?)",
-                                    (new_slot.strip(),),
-                                )
-                                conn.commit()
-                                st.success(f"✅ Added time slot: {new_slot}")
-                                st.rerun()
-                            except sqlite3.IntegrityError:
-                                st.warning("⚠️ Time slot already exists.")
-                            finally:
-                                conn.close()
-    
-                # Edit existing time slots
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("SELECT * FROM time_slots ORDER BY label")
-                slots = cursor.fetchall()
-                conn.close()
-    
-                for row in slots:
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        st.write(f"🕒 {row['label']}")
-                    with col2:
-                        enabled = st.checkbox(
-                            "Available",
-                            value=bool(row["active"]),
-                            key=f"time_{row['id']}",
-                        )
-                        if enabled != bool(row["active"]):
-                            conn = get_db_connection()
-                            cur = conn.cursor()
-                            cur.execute(
-                                "UPDATE time_slots SET active = ? WHERE id = ?",
-                                (int(enabled), row["id"]),
                             )
                             conn.commit()
                             conn.close()
