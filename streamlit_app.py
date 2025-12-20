@@ -475,32 +475,94 @@ elif choice == "🔒 Order Management":
                     new_category = st.selectbox("Category", ["drink", "milk", "flavor", "drizzle"])
                     add_item = st.form_submit_button("Add to Menu")
 
-                    if add_item:
-                        if not new_label.strip():
-                            st.error("Item name cannot be empty.")
-                        else:
-                            conn = get_db_connection()
-                            cur = conn.cursor()
-                            try:
-                                # Find the current max sort_order for this category, then append to bottom
-                                cur.execute(
-                                    "SELECT COALESCE(MAX(sort_order), 0) FROM menu_options WHERE category = ?",
-                                    (new_category,)
-                                )
-                                max_sort = cur.fetchone()[0]
-                                
-                                cur.execute(
-                                    "INSERT INTO menu_options (category, label, sort_order) VALUES (?, ?, ?)",
-                                    (new_category, new_label.strip(), max_sort + 1)
-                                )
+                                    # --- Edit Existing Menu Items ---
+                                    conn = get_db_connection()
+                                    cursor = conn.cursor()
+                                    cursor.execute(
+                                        "SELECT * FROM menu_options ORDER BY category, sort_order, label"
+                                    )
+                                    rows = cursor.fetchall()
+                                    conn.close()
+                    
+                                    for row in rows:
+                                        # FLAVORS get extra toggles
+                                        if row["category"] == "flavor":
+                                            col1, col2, col3, col4, col5 = st.columns([2.2, 1.4, 1.2, 1.2, 1.2])
+                    
+                                            with col1:
+                                                st.write(f"**{row['label']}**")
+                                            with col2:
+                                                st.write(f"Category: {row['category']}")
+                    
+                                            with col3:
+                                                active_val = st.checkbox(
+                                                    "Available",
+                                                    value=bool(row["active"]),
+                                                    key=f"menu_active_{row['id']}",
+                                                )
+                    
+                                            with col4:
+                                                espresso_val = st.checkbox(
+                                                    "Espresso",
+                                                    value=bool(row["espresso_enabled"]),
+                                                    key=f"menu_espresso_{row['id']}",
+                                                )
+                    
+                                            with col5:
+                                                cold_val = st.checkbox(
+                                                    "Cold Brew",
+                                                    value=bool(row["cold_brew_enabled"]),
+                                                    key=f"menu_cold_{row['id']}",
+                                                )
+                    
+                                            if (
+                                                active_val != bool(row["active"])
+                                                or espresso_val != bool(row["espresso_enabled"])
+                                                or cold_val != bool(row["cold_brew_enabled"])
+                                            ):
+                                                conn = get_db_connection()
+                                                cur = conn.cursor()
+                                                cur.execute(
+                                                    """
+                                                    UPDATE menu_options
+                                                    SET active = ?,
+                                                        espresso_enabled = ?,
+                                                        cold_brew_enabled = ?
+                                                    WHERE id = ?
+                                                    """,
+                                                    (int(active_val), int(espresso_val), int(cold_val), row["id"]),
+                                                )
+                                                conn.commit()
+                                                conn.close()
+                                                st.rerun()
+                    
+                                        # EVERYTHING ELSE (drink / milk / drizzle)
+                                        else:
+                                            col1, col2, col3 = st.columns([2.2, 1.6, 1.2])
+                    
+                                            with col1:
+                                                st.write(f"**{row['label']}**")
+                                            with col2:
+                                                st.write(f"Category: {row['category']}")
+                    
+                                            with col3:
+                                                active_val = st.checkbox(
+                                                    "Available",
+                                                    value=bool(row["active"]),
+                                                    key=f"menu_active_{row['id']}",
+                                                )
+                    
+                                            if active_val != bool(row["active"]):
+                                                conn = get_db_connection()
+                                                cur = conn.cursor()
+                                                cur.execute(
+                                                    "UPDATE menu_options SET active = ? WHERE id = ?",
+                                                    (int(active_val), row["id"]),
+                                                )
+                                                conn.commit()
+                                                conn.close()
+                                                st.rerun()
 
-                                conn.commit()
-                                st.success(f"✅ Added '{new_label}' to {new_category}s!")
-                                st.rerun()
-                            except sqlite3.IntegrityError:
-                                st.warning("⚠️ This item already exists.")
-                            finally:
-                                conn.close()
 
                 # --- Edit Active Items ---
                 conn = get_db_connection()
