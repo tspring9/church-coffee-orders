@@ -462,144 +462,92 @@ elif choice == "🔒 Order Management":
         if not st.session_state.volunteer_authenticated:
             st.warning("Please enter the passcode in 'Manage Orders' to access menu settings.")
         else:
-            tab_choice = st.radio("What would you like to manage?", ["Menu Items", "Time Slots"], horizontal=True)
-
-            # --- MENU ITEMS ---
+            tab_choice = st.radio(
+                "What would you like to manage?",
+                ["Menu Items", "Time Slots"],
+                horizontal=True
+            )
+    
+            # =========================
+            # MENU ITEMS
+            # =========================
             if tab_choice == "Menu Items":
                 st.subheader("🧾 Menu Editor")
-
+    
                 # --- Add New Item ---
                 st.markdown("### ➕ Add a New Menu Item")
                 with st.form(key="add_menu_item_form"):
                     new_label = st.text_input("Item Name")
                     new_category = st.selectbox("Category", ["drink", "milk", "flavor", "drizzle"])
                     add_item = st.form_submit_button("Add to Menu")
-
-                                    # --- Edit Existing Menu Items ---
-                                    conn = get_db_connection()
-                                    cursor = conn.cursor()
-                                    cursor.execute(
-                                        "SELECT * FROM menu_options ORDER BY category, sort_order, label"
-                                    )
-                                    rows = cursor.fetchall()
-                                    conn.close()
-                    
-                                    for row in rows:
-                                        # FLAVORS get extra toggles
-                                        if row["category"] == "flavor":
-                                            col1, col2, col3, col4, col5 = st.columns([2.2, 1.4, 1.2, 1.2, 1.2])
-                    
-                                            with col1:
-                                                st.write(f"**{row['label']}**")
-                                            with col2:
-                                                st.write(f"Category: {row['category']}")
-                    
-                                            with col3:
-                                                active_val = st.checkbox(
-                                                    "Available",
-                                                    value=bool(row["active"]),
-                                                    key=f"menu_active_{row['id']}",
-                                                )
-                    
-                                            with col4:
-                                                espresso_val = st.checkbox(
-                                                    "Espresso",
-                                                    value=bool(row["espresso_enabled"]),
-                                                    key=f"menu_espresso_{row['id']}",
-                                                )
-                    
-                                            with col5:
-                                                cold_val = st.checkbox(
-                                                    "Cold Brew",
-                                                    value=bool(row["cold_brew_enabled"]),
-                                                    key=f"menu_cold_{row['id']}",
-                                                )
-                    
-                                            if (
-                                                active_val != bool(row["active"])
-                                                or espresso_val != bool(row["espresso_enabled"])
-                                                or cold_val != bool(row["cold_brew_enabled"])
-                                            ):
-                                                conn = get_db_connection()
-                                                cur = conn.cursor()
-                                                cur.execute(
-                                                    """
-                                                    UPDATE menu_options
-                                                    SET active = ?,
-                                                        espresso_enabled = ?,
-                                                        cold_brew_enabled = ?
-                                                    WHERE id = ?
-                                                    """,
-                                                    (int(active_val), int(espresso_val), int(cold_val), row["id"]),
-                                                )
-                                                conn.commit()
-                                                conn.close()
-                                                st.rerun()
-                    
-                                        # EVERYTHING ELSE (drink / milk / drizzle)
-                                        else:
-                                            col1, col2, col3 = st.columns([2.2, 1.6, 1.2])
-                    
-                                            with col1:
-                                                st.write(f"**{row['label']}**")
-                                            with col2:
-                                                st.write(f"Category: {row['category']}")
-                    
-                                            with col3:
-                                                active_val = st.checkbox(
-                                                    "Available",
-                                                    value=bool(row["active"]),
-                                                    key=f"menu_active_{row['id']}",
-                                                )
-                    
-                                            if active_val != bool(row["active"]):
-                                                conn = get_db_connection()
-                                                cur = conn.cursor()
-                                                cur.execute(
-                                                    "UPDATE menu_options SET active = ? WHERE id = ?",
-                                                    (int(active_val), row["id"]),
-                                                )
-                                                conn.commit()
-                                                conn.close()
-                                                st.rerun()
-
-
-                # --- Edit Active Items ---
+    
+                    if add_item:
+                        if not new_label.strip():
+                            st.error("Item name cannot be empty.")
+                        else:
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            try:
+                                # append to bottom of category
+                                cur.execute(
+                                    "SELECT COALESCE(MAX(sort_order), 0) FROM menu_options WHERE category = ?",
+                                    (new_category,),
+                                )
+                                max_sort = cur.fetchone()[0]
+    
+                                cur.execute(
+                                    "INSERT INTO menu_options (category, label, sort_order) VALUES (?, ?, ?)",
+                                    (new_category, new_label.strip(), max_sort + 1),
+                                )
+                                conn.commit()
+                                st.success(f"✅ Added '{new_label}' to {new_category}s!")
+                                st.rerun()
+    
+                            except sqlite3.IntegrityError:
+                                st.warning("⚠️ This item already exists.")
+                            finally:
+                                conn.close()
+    
+                # --- Edit Existing Menu Items ---
+                st.markdown("### ✅ Edit Existing Menu Items")
+    
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM menu_options ORDER BY category, label, sort_order")
+                cursor.execute("SELECT * FROM menu_options ORDER BY category, sort_order, label")
                 rows = cursor.fetchall()
                 conn.close()
-
+    
                 for row in rows:
-                    # For flavors, we want 5 columns (Label, Category, Available, Espresso, Cold Brew)
+                    # FLAVORS: Available + Espresso + Cold Brew
                     if row["category"] == "flavor":
                         col1, col2, col3, col4, col5 = st.columns([2.2, 1.4, 1.2, 1.2, 1.2])
-                
+    
                         with col1:
                             st.write(f"**{row['label']}**")
                         with col2:
                             st.write(f"Category: {row['category']}")
-                
-                        # Existing toggle: active
+    
                         with col3:
-                            active_val = st.checkbox("Available", value=bool(row["active"]), key=f"menu_active_{row['id']}")
-                
-                        # NEW toggles
+                            active_val = st.checkbox(
+                                "Available",
+                                value=bool(row["active"]),
+                                key=f"menu_active_{row['id']}",
+                            )
+    
                         with col4:
                             espresso_val = st.checkbox(
                                 "Espresso",
                                 value=bool(row["espresso_enabled"]),
                                 key=f"menu_espresso_{row['id']}",
                             )
+    
                         with col5:
                             cold_val = st.checkbox(
                                 "Cold Brew",
                                 value=bool(row["cold_brew_enabled"]),
                                 key=f"menu_cold_{row['id']}",
                             )
-                
-                        # Save if anything changed
+    
                         if (
                             active_val != bool(row["active"])
                             or espresso_val != bool(row["espresso_enabled"])
@@ -620,39 +568,56 @@ elif choice == "🔒 Order Management":
                             conn.commit()
                             conn.close()
                             st.rerun()
-
-    else:
-        # Non-flavor rows: keep your original 3-column layout
-        col1, col2, col3 = st.columns([2, 2, 1])
-        with col1:
-            st.write(f"**{row['label']}**")
-        with col2:
-            st.write(f"Category: {row['category']}")
-        with col3:
-            new_status = st.checkbox("Available", value=bool(row["active"]), key=f"menu_{row['id']}")
-            if new_status != bool(row["active"]):
-                conn = get_db_connection()
-                cur = conn.cursor()
-                cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row["id"]))
-                conn.commit()
-                conn.close()
-                st.rerun()
-
-
-            # --- TIME SLOTS ---
+    
+                    # EVERYTHING ELSE: just Available
+                    else:
+                        col1, col2, col3 = st.columns([2.2, 1.6, 1.2])
+    
+                        with col1:
+                            st.write(f"**{row['label']}**")
+                        with col2:
+                            st.write(f"Category: {row['category']}")
+    
+                        with col3:
+                            active_val = st.checkbox(
+                                "Available",
+                                value=bool(row["active"]),
+                                key=f"menu_active_{row['id']}",
+                            )
+    
+                        if active_val != bool(row["active"]):
+                            conn = get_db_connection()
+                            cur = conn.cursor()
+                            cur.execute(
+                                "UPDATE menu_options SET active = ? WHERE id = ?",
+                                (int(active_val), row["id"]),
+                            )
+                            conn.commit()
+                            conn.close()
+                            st.rerun()
+    
+            # =========================
+            # TIME SLOTS
+            # =========================
             elif tab_choice == "Time Slots":
                 st.subheader("📅 Manage Time Slots")
-
+    
                 # Add new time slot
                 with st.form("add_time_slot"):
                     new_slot = st.text_input("New Time Slot (e.g., 7:45)")
                     add_slot = st.form_submit_button("Add Slot")
+    
                     if add_slot:
-                        if new_slot:
+                        if not new_slot.strip():
+                            st.error("Time slot cannot be empty.")
+                        else:
                             try:
                                 conn = get_db_connection()
                                 cur = conn.cursor()
-                                cur.execute("INSERT INTO time_slots (label) VALUES (?)", (new_slot.strip(),))
+                                cur.execute(
+                                    "INSERT INTO time_slots (label) VALUES (?)",
+                                    (new_slot.strip(),),
+                                )
                                 conn.commit()
                                 st.success(f"✅ Added time slot: {new_slot}")
                                 st.rerun()
@@ -660,24 +625,31 @@ elif choice == "🔒 Order Management":
                                 st.warning("⚠️ Time slot already exists.")
                             finally:
                                 conn.close()
-
+    
                 # Edit existing time slots
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute("SELECT * FROM time_slots ORDER BY label")
                 slots = cursor.fetchall()
                 conn.close()
-
+    
                 for row in slots:
                     col1, col2 = st.columns([3, 1])
                     with col1:
                         st.write(f"🕒 {row['label']}")
                     with col2:
-                        enabled = st.checkbox("Available", value=bool(row['active']), key=f"time_{row['id']}")
-                        if enabled != bool(row['active']):
+                        enabled = st.checkbox(
+                            "Available",
+                            value=bool(row["active"]),
+                            key=f"time_{row['id']}",
+                        )
+                        if enabled != bool(row["active"]):
                             conn = get_db_connection()
                             cur = conn.cursor()
-                            cur.execute("UPDATE time_slots SET active = ? WHERE id = ?", (int(enabled), row['id']))
+                            cur.execute(
+                                "UPDATE time_slots SET active = ? WHERE id = ?",
+                                (int(enabled), row["id"]),
+                            )
                             conn.commit()
                             conn.close()
                             st.rerun()
