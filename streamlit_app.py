@@ -510,20 +510,72 @@ elif choice == "🔒 Order Management":
                 conn.close()
 
                 for row in rows:
-                    col1, col2, col3 = st.columns([2, 2, 1])
-                    with col1:
-                        st.write(f"**{row['label']}**")
-                    with col2:
-                        st.write(f"Category: {row['category']}")
-                    with col3:
-                        new_status = st.checkbox("Available", value=bool(row['active']), key=f"menu_{row['id']}")
-                        if new_status != bool(row['active']):
+                    # For flavors, we want 5 columns (Label, Category, Available, Espresso, Cold Brew)
+                    if row["category"] == "flavor":
+                        col1, col2, col3, col4, col5 = st.columns([2.2, 1.4, 1.2, 1.2, 1.2])
+                
+                        with col1:
+                            st.write(f"**{row['label']}**")
+                        with col2:
+                            st.write(f"Category: {row['category']}")
+                
+                        # Existing toggle: active
+                        with col3:
+                            active_val = st.checkbox("Available", value=bool(row["active"]), key=f"menu_active_{row['id']}")
+                
+                        # NEW toggles
+                        with col4:
+                            espresso_val = st.checkbox(
+                                "Espresso",
+                                value=bool(row["espresso_enabled"]),
+                                key=f"menu_espresso_{row['id']}",
+                            )
+                        with col5:
+                            cold_val = st.checkbox(
+                                "Cold Brew",
+                                value=bool(row["cold_brew_enabled"]),
+                                key=f"menu_cold_{row['id']}",
+                            )
+                
+                        # Save if anything changed
+                        if (
+                            active_val != bool(row["active"])
+                            or espresso_val != bool(row["espresso_enabled"])
+                            or cold_val != bool(row["cold_brew_enabled"])
+                        ):
                             conn = get_db_connection()
                             cur = conn.cursor()
-                            cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row['id']))
+                            cur.execute(
+                                """
+                                UPDATE menu_options
+                                SET active = ?,
+                                    espresso_enabled = ?,
+                                    cold_brew_enabled = ?
+                                WHERE id = ?
+                                """,
+                                (int(active_val), int(espresso_val), int(cold_val), row["id"]),
+                            )
                             conn.commit()
                             conn.close()
                             st.rerun()
+
+    else:
+        # Non-flavor rows: keep your original 3-column layout
+        col1, col2, col3 = st.columns([2, 2, 1])
+        with col1:
+            st.write(f"**{row['label']}**")
+        with col2:
+            st.write(f"Category: {row['category']}")
+        with col3:
+            new_status = st.checkbox("Available", value=bool(row["active"]), key=f"menu_{row['id']}")
+            if new_status != bool(row["active"]):
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("UPDATE menu_options SET active = ? WHERE id = ?", (int(new_status), row["id"]))
+                conn.commit()
+                conn.close()
+                st.rerun()
+
 
             # --- TIME SLOTS ---
             elif tab_choice == "Time Slots":
