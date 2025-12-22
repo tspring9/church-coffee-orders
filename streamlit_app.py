@@ -258,7 +258,7 @@ if choice == "Place Order":
         else:
             submit_order(name, drink, milk, flavors, drizzle)
 
-            st.session_state.page = "Customer Display"
+            st.session_state.nav = "Customer Display"
             st.rerun()
 
 
