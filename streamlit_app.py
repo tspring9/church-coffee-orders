@@ -141,16 +141,18 @@ st.sidebar.image("CCO.png", use_container_width=True)
 # --- App Menu Choices ---
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
+# "nav" is your programmable page target
 if "nav" not in st.session_state:
     st.session_state.nav = "Place Order"
 
-# Widget uses a DIFFERENT key
+# Widget uses its own key (do NOT use "nav" here)
 selected = st.sidebar.radio("Select Page:", menu, key="menu_radio")
 
-# Sync user clicks into your nav state
+# Sync user click into nav state
 st.session_state.nav = selected
 
 choice = st.session_state.nav
+
 
 
 
