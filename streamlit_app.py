@@ -224,15 +224,20 @@ st.title("☕️ Collective Church Coffee Pre-Orders")
 
 # --- Sidebar logo ---
 st.sidebar.image("CCO.png", use_container_width=True)
-# --- Sidebar menu ---
+# --- App Menu Choices ---
+menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
+
 if "page" not in st.session_state:
     st.session_state.page = "Place Order"
 
-choice = st.sidebar.radio(
+st.sidebar.radio(
     "Select Page:",
     menu,
-    index=menu.index(st.session_state.page)
+    key="page"
 )
+
+choice = st.session_state.page
+
 
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
