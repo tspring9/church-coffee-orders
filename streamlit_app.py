@@ -213,7 +213,14 @@ st.title("☕️ Collective Church Coffee Pre-Orders")
 # --- Sidebar logo ---
 st.sidebar.image("CCO.png", use_container_width=True)
 # --- Sidebar menu ---
-choice = st.sidebar.radio("Select Page:", menu)
+if "page" not in st.session_state:
+    st.session_state.page = "Place Order"
+
+choice = st.sidebar.radio(
+    "Select Page:",
+    menu,
+    index=menu.index(st.session_state.page)
+)
 
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
@@ -244,7 +251,10 @@ if choice == "Place Order":
             st.error("Please select a drink and milk type before submitting.")
         else:
             submit_order(name, drink, milk, flavors, drizzle)
-            st.success("✅ Your order has been placed!")
+
+            st.session_state.page = "Customer Display"
+            st.rerun()
+
 
 
 
