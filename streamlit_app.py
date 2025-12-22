@@ -149,9 +149,24 @@ if "nav" not in st.session_state:
 selected = st.sidebar.radio("Select Page:", menu, key="menu_radio")
 
 # Sync user click into nav state
-st.session_state.nav = selected
+# "nav" is your programmable page target
+if "nav" not in st.session_state:
+    st.session_state.nav = "Place Order"
+
+# Sidebar widget uses its own key
+selected = st.sidebar.radio(
+    "Select Page:",
+    menu,
+    index=menu.index(st.session_state.nav),
+    key="menu_radio"
+)
+
+# Only update nav if the user actually clicked something different
+if selected != st.session_state.nav:
+    st.session_state.nav = selected
 
 choice = st.session_state.nav
+
 
 
 
