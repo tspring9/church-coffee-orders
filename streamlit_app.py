@@ -227,9 +227,6 @@ def get_active_menu_items(category, drink_type=None):
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
 
-choice = st.session_state.page
-
-
 if choice == "Place Order":
     st.header("Place Your Coffee Order")
 
