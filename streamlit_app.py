@@ -136,6 +136,8 @@ def init_menu_options():
 init_db()
 init_menu_options()
 
+# --- Sidebar logo ---
+st.sidebar.image("CCO.png", use_container_width=True)
 # --- App Menu Choices ---
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
@@ -221,11 +223,6 @@ def get_active_menu_items(category, drink_type=None):
 
 # --- Streamlit App ---
 st.title("☕️ Collective Church Coffee Pre-Orders")
-
-# --- Sidebar logo ---
-st.sidebar.image("CCO.png", use_container_width=True)
-# --- App Menu Choices ---
-menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
 choice = st.session_state.page
 
