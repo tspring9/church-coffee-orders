@@ -139,6 +139,18 @@ init_menu_options()
 # --- App Menu Choices ---
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
+if "page" not in st.session_state:
+    st.session_state.page = "Place Order"
+
+st.sidebar.radio(
+    "Select Page:",
+    menu,
+    key="page"   # <-- this binds the widget to st.session_state.page automatically
+)
+
+choice = st.session_state.page
+
+
 # --- Submit a new order ---
 def submit_order(name, drink, milk, flavors, drizzle):
     conn = get_db_connection()
