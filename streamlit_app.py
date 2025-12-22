@@ -141,16 +141,17 @@ st.sidebar.image("CCO.png", use_container_width=True)
 # --- App Menu Choices ---
 menu = ["Place Order", "Customer Display", "New Here?", "🔒 Order Management"]
 
-if "page" not in st.session_state:
-    st.session_state.page = "Place Order"
+if "nav" not in st.session_state:
+    st.session_state.nav = "Place Order"
 
-st.sidebar.radio(
-    "Select Page:",
-    menu,
-    key="page"   # <-- this binds the widget to st.session_state.page automatically
-)
+# Widget uses a DIFFERENT key
+selected = st.sidebar.radio("Select Page:", menu, key="menu_radio")
 
-choice = st.session_state.page
+# Sync user clicks into your nav state
+st.session_state.nav = selected
+
+choice = st.session_state.nav
+
 
 
 # --- Submit a new order ---
